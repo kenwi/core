@@ -23,17 +23,36 @@
 namespace OCA\DAV\CardDAV;
 
 use OCA\DAV\Connector\Sabre\Principal;
+use OCP\IDBConnection;
 use Sabre\CardDAV\Backend\BackendInterface;
 use Sabre\CardDAV\Backend\SyncSupport;
 use Sabre\CardDAV\Plugin;
 use Sabre\DAV\Exception\BadRequest;
+use Sabre\VObject\Reader;
 
 class CardDavBackend implements BackendInterface, SyncSupport {
 
 	/** @var Principal */
 	private $principalBackend;
 
-	public function __construct(\OCP\IDBConnection $db, Principal $principalBackend) {
+	/** @var string */
+	private $dbCardsTable = 'cards';
+
+	/** @var string */
+	private $dbCardsPropertiesTable = 'cards_properties';
+
+	/** @var array properties to index */
+	public static $indexProperties = array(
+			'BDAY', 'UID', 'N', 'FN', 'TITLE', 'ROLE', 'NOTE', 'NICKNAME',
+			'ORG', 'CATEGORIES', 'EMAIL', 'TEL', 'IMPP', 'ADR', 'URL', 'GEO', 'CLOUD');
+
+	/**
+	 * CardDavBackend constructor.
+	 *
+	 * @param IDBConnection $db
+	 * @param Principal $principalBackend
+	 */
+	public function __construct(IDBConnection $db, Principal $principalBackend) {
 		$this->db = $db;
 		$this->principalBackend = $principalBackend;
 	}
@@ -263,6 +282,11 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 			->where($query->expr()->eq('resourceid', $query->createNamedParameter($addressBookId)))
 			->andWhere($query->expr()->eq('type', $query->createNamedParameter('addressbook')))
 			->execute();
+
+		$query->delete($this->dbCardsPropertiesTable)
+			->where($query->expr()->eq('addressbookid', $query->createNamedParameter($addressBookId)))
+			->execute();
+
 	}
 
 	/**
@@ -408,6 +432,7 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 			->execute();
 
 		$this->addChange($addressBookId, $cardUri, 1);
+		$this->updateProperties($addressBookId, $cardUri, $cardData);
 
 		return '"' . $etag . '"';
 	}
@@ -451,6 +476,7 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 			->execute();
 
 		$this->addChange($addressBookId, $cardUri, 2);
+		$this->updateProperties($addressBookId, $cardUri, $cardData);
 
 		return '"' . $etag . '"';
 	}
@@ -470,6 +496,7 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 			->execute();
 
 		$this->addChange($addressBookId, $cardUri, 3);
+		$this->purgeProperties($cardUri);
 
 		return $ret === 1;
 	}
@@ -733,5 +760,78 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 		}
 
 		return $shares;
+	}
+
+	/**
+	 * update properties table
+	 *
+	 * @param int $addressBookId
+	 * @param string $cardUri
+	 * @param string $vCardSerialized
+	 */
+	public function updateProperties($addressBookId, $cardUri, $vCardSerialized) {
+		$cardId = $this->getCardId($cardUri);
+		$vCard = Reader::read($vCardSerialized);
+		$this->purgeProperties($cardId);
+
+		$query = $this->db->getQueryBuilder();
+		$query->insert($this->dbCardsPropertiesTable)
+				->values(
+						[
+								'addressbookid' => $query->createNamedParameter($addressBookId),
+								'cardid' => $query->createNamedParameter($cardId),
+								'name' => $query->createParameter('name'),
+								'value' => $query->createParameter('value'),
+								'preferred' => $query->createParameter('preferred')
+						]
+				);
+
+		foreach ($vCard->children as $property) {
+			if(!in_array($property->name, self::$indexProperties)) {
+				continue;
+			}
+			$preferred = 0;
+			foreach($property->parameters as $parameter) {
+				if ($parameter->name == 'TYPE' && strtoupper($parameter->getValue()) == 'PREF') {
+					$preferred = 1;
+					break;
+				}
+			}
+			$query->setParameter('name', $property->name);
+			$query->setParameter('value', substr($property->getValue(), 0, 254));
+			$query->setParameter('preferred', $preferred);
+			$query->execute();
+		}
+	}
+
+	/**
+	 * delete all properties from a given card
+	 *
+	 * @param string $cardUri
+	 */
+	protected function purgeProperties($cardUri) {
+		$cardId = $this->getCardId($cardUri);
+		$query = $this->db->getQueryBuilder();
+		$query->delete($this->dbCardsPropertiesTable)
+				->where($query->expr()->eq('cardid', $query->createNamedParameter($cardId)));
+		$query->execute();
+	}
+
+	/**
+	 * get ID from a given contact
+	 *
+	 * @param string $uri
+	 * @return int
+	 */
+	protected function getCardId($uri) {
+		$query = $this->db->getQueryBuilder();
+		$query->select('id')->from($this->dbCardsTable)
+				->where($query->expr()->eq('uri', $query->createNamedParameter($uri)));
+
+		$result = $query->execute();
+		$cardIds = $result->fetch();
+		$result->closeCursor();
+
+		return (int)$cardIds['id'];
 	}
 }
