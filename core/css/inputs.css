@@ -124,9 +124,11 @@ html:not(.ie8) input[type="checkbox"].checkbox--white:disabled + label:before {
 	background-image: url('../img/actions/checkbox-disabled-white.svg');
 }
 
+/* TODO icon is missing
 html:not(.ie8) input[type="checkbox"].checkbox--white:checked:disabled + label:before {
 	background-image: url('../img/actions/checkbox-checked-disabled-white.svg');
 }
+*/
 
 html:not(.ie8) input[type="checkbox"].checkbox:hover+label:before, input[type="checkbox"]:focus+label:before {
 	color:#111 !important;
