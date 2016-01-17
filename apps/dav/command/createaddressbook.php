@@ -1,11 +1,31 @@
 <?php
-
+/**
+ * @author Björn Schießle <schiessle@owncloud.com>
+ * @author Thomas Müller <thomas.mueller@tmit.eu>
+ *
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
+ * @license AGPL-3.0
+ *
+ * This code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License, version 3,
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ */
 namespace OCA\DAV\Command;
 
 use OCA\DAV\CardDAV\CardDavBackend;
 use OCA\DAV\Connector\Sabre\Principal;
 use OCP\IConfig;
 use OCP\IDBConnection;
+use OCP\ILogger;
 use OCP\IUserManager;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -23,15 +43,25 @@ class CreateAddressBook extends Command {
 	/** @var IConfig */
 	private $config;
 
+	/** @var ILogger  */
+	private $logger;
+
 	/**
 	 * @param IUserManager $userManager
 	 * @param IDBConnection $dbConnection
+	 * @param IConfig $config
+	 * @param ILogger $logger
 	 */
-	function __construct(IUserManager $userManager, IDBConnection $dbConnection, IConfig $config) {
+	function __construct(IUserManager $userManager,
+						 IDBConnection $dbConnection,
+						 IConfig $config,
+						 ILogger $logger
+	) {
 		parent::__construct();
 		$this->userManager = $userManager;
 		$this->dbConnection = $dbConnection;
 		$this->config = $config;
+		$this->logger = $logger;
 	}
 
 	protected function configure() {
@@ -52,7 +82,6 @@ class CreateAddressBook extends Command {
 			throw new \InvalidArgumentException("User <$user> in unknown.");
 		}
 		$principalBackend = new Principal(
-				$this->config,
 				$this->userManager
 		);
 

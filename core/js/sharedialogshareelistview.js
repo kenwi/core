@@ -26,7 +26,7 @@
 			'        <div class="avatar {{#if modSeed}}imageplaceholderseed{{/if}}" data-username="{{shareWith}}" {{#if modSeed}}data-seed="{{shareWith}} {{shareType}}"{{/if}}></div>' +
 			'        {{/if}}' +
 			'        <span class="username">{{shareWithDisplayName}}</span>' +
-			'        {{#if mailPublicNotificationEnabled}} {{#unless isRemoteShare}}' +
+			'        {{#if mailNotificationEnabled}} {{#unless isRemoteShare}}' +
 			'        <input id="mail-{{cid}}-{{shareWith}}" type="checkbox" name="mailNotification" class="mailNotification checkbox" {{#if wasMailSent}}checked="checked"{{/if}} />' +
 			'        <label for="mail-{{cid}}-{{shareWith}}">{{notifyByMailLabel}}</label>' +
 			'        {{/unless}} {{/if}}' +
@@ -164,7 +164,7 @@
 		getShareeList: function() {
 			var universal = {
 				avatarEnabled: this.configModel.areAvatarsEnabled(),
-				mailPublicNotificationEnabled: this.configModel.isMailPublicNotificationEnabled(),
+				mailNotificationEnabled: this.configModel.isMailNotificationEnabled(),
 				notifyByMailLabel: t('core', 'notify by email'),
 				unshareLabel: t('core', 'Unshare'),
 				unshareImage: OC.imagePath('core', 'actions/delete'),
@@ -245,12 +245,14 @@
 
 		onUnshare: function(event) {
 			var $element = $(event.target);
-			console.log($element);
+			if (!$element.is('a')) {
+				$element = $element.closest('a');
+			}
 
-			var $loading = $element.siblings('.icon-loading-small').eq(0);
+			var $loading = $element.find('.icon-loading-small').eq(0);
 			if(!$loading.hasClass('hidden')) {
 				// in process
-				return;
+				return false;
 			}
 			$loading.removeClass('hidden');
 

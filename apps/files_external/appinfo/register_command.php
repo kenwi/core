@@ -1,8 +1,8 @@
 <?php
 /**
- * @author Björn Schießle <schiessle@owncloud.com>
+ * @author Robin Appelman <icewind@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -23,6 +23,7 @@
 use OCA\Files_External\Command\ListCommand;
 use OCA\Files_External\Command\Config;
 use OCA\Files_External\Command\Option;
+use \OCA\Files_External\Command\Import;
 
 $userManager = OC::$server->getUserManager();
 $userSession = OC::$server->getUserSession();
@@ -31,8 +32,11 @@ $app = \OC_Mount_Config::$app;
 
 $globalStorageService = $app->getContainer()->query('\OCA\Files_external\Service\GlobalStoragesService');
 $userStorageService = $app->getContainer()->query('\OCA\Files_external\Service\UserStoragesService');
+$importLegacyStorageService = $app->getContainer()->query('\OCA\Files_external\Service\ImportLegacyStoragesService');
+$backendService = $app->getContainer()->query('OCA\Files_External\Service\BackendService');
 
 /** @var Symfony\Component\Console\Application $application */
 $application->add(new ListCommand($globalStorageService, $userStorageService, $userSession, $userManager));
 $application->add(new Config($globalStorageService));
 $application->add(new Option($globalStorageService));
+$application->add(new Import($globalStorageService, $userStorageService, $userSession, $userManager, $importLegacyStorageService, $backendService));

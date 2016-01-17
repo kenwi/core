@@ -2,7 +2,7 @@
 /**
  * @author Roeland Jago Douma <rullzer@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -25,6 +25,13 @@ use OC\Share20\Exception\BackendError;
 use OCP\IUser;
 
 interface IShareProvider {
+
+	/**
+	 * Return the identifier of this provider.
+	 *
+	 * @return string Containing only [a-zA-Z0-9]
+	 */
+	public function identifier();
 
 	/**
 	 * Share a path
@@ -81,11 +88,10 @@ interface IShareProvider {
 	/**
 	 * Get shares for a given path
 	 *
-	 * @param \OCP\IUser $user
 	 * @param \OCP\Files\Node $path
 	 * @return IShare[]
 	 */
-	public function getSharesByPath(\OCP\IUser $user, \OCP\Files\Node $path);
+	public function getSharesByPath(\OCP\Files\Node $path);
 
 	/**
 	 * Get shared with the given user

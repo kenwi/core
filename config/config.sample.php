@@ -214,6 +214,14 @@ $CONFIG = array(
 ),
 
 /**
+ * If your user backend does not allow to reset the password (e.g. when it's a
+ * read-only user backend like LDAP), you can specify a custom link, where the
+ * user is redirected to, when clicking the "reset password" link after a failed
+ * login-attempt.
+ */
+'lost_password_link' => 'https://example.org/link/to/password/reset',
+
+/**
  * Mail Parameters
  *
  * These configure the email settings for ownCloud notifications and password
@@ -397,7 +405,7 @@ $CONFIG = array(
  *     delete all files in the trash bin that are older than D days   
  *     automatically, delete other files anytime if space needed
  * * ``D1, D2``    
- *     keep files and folders the in trash bin for at least D1 days and 
+ *     keep files and folders in the trash bin for at least D1 days and 
  *     delete when exceeds D2 days
  * * ``disabled``  
  *     trash bin auto clean disabled, files and folders will be kept forever
@@ -467,6 +475,13 @@ $CONFIG = array(
  * attempting to make a WebDAV request from PHP.
  */
 'check_for_working_webdav' => true,
+
+/**
+ * Allows ownCloud to verify a working .well-known URL redirects. This is done
+ * by attempting to make a request from JS to
+ * https://your-domain.com/.well-known/caldav/
+ */
+'check_for_working_wellknown_setup' => true,
 
 /**
  * This is a crucial security check on Apache servers that should always be set
@@ -791,20 +806,17 @@ $CONFIG = array(
 'ldapUserCleanupInterval' => 51,
 
 /**
- * Enforce the existence of the home folder naming rule for all users
+ * Comments
  *
- * Following scenario:
- *  * a home folder naming rule is set in LDAP advanced settings
- *  * a user doesn't have the home folder naming rule attribute set
- *
- * If this is set to **true** (default) it will NOT fallback to the core's
- * default naming rule of using the internal user ID as home folder name.
- *
- * If this is set to **false** it will fallback for the users without the
- * attribute set to naming the home folder like the internal user ID.
- *
+ * Global settings for the Comments infrastructure
  */
-'enforce_home_folder_naming_rule' => true,
+
+/**
+ * Replaces the default Comments Manager Factory. This can be utilized if an
+ * own or 3rdParty CommentsManager should be used that – for instance – uses the
+ * filesystem instead of the database to keep the comments.
+ */
+'comments.managerFactory' => '\OC\Comments\ManagerFactory',
 
 /**
  * Maintenance
@@ -840,6 +852,11 @@ $CONFIG = array(
 'openssl' => array(
 	'config' => '/absolute/location/of/openssl.cnf',
 ),
+
+/**
+ * Allow the configuration of system wide trusted certificates
+ */
+'enable_certificate_management' => false,
 
 /**
  * Memory caching backend configuration
@@ -953,8 +970,26 @@ $CONFIG = array(
 		// dev-/trystack uses swift by default, the lib defaults to 'cloudFiles'
 		// if omitted
 		'serviceName' => 'swift',
+		// The Interface / url Type, optional
+		'urlType' => 'internal'
 	),
 ),
+
+
+/**
+ * Sharing
+ *
+ * Global settings for Sharing
+ */
+
+/**
+ * Replaces the default Share Provider Factory. This can be utilized if
+ * own or 3rdParty Share Providers be used that – for instance – uses the
+ * filesystem instead of the database to keep the share information.
+ */
+'sharing.managerFactory' => '\OC\Share20\ProviderFactory',
+
+
 
 /**
  * All other config options
@@ -1058,9 +1093,6 @@ $CONFIG = array(
  *
  * 1 -> Check each file or folder at most once per request, recommended for
  * general use if outside changes might happen.
- *
- * 2 -> Check every time the filesystem is used, causes a performance hit when
- * using external storages, not recommended for regular use.
  */
 'filesystem_check_changes' => 0,
 

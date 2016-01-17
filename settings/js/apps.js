@@ -176,7 +176,8 @@ OC.Settings.Apps = OC.Settings.Apps || {
 
 		// set group select properly
 		if(OC.Settings.Apps.isType(app, 'filesystem') || OC.Settings.Apps.isType(app, 'prelogin') ||
-			OC.Settings.Apps.isType(app, 'authentication') || OC.Settings.Apps.isType(app, 'logging')) {
+			OC.Settings.Apps.isType(app, 'authentication') || OC.Settings.Apps.isType(app, 'logging') ||
+			OC.Settings.Apps.isType(app, 'prevent_group_restriction')) {
 			page.find(".groups-enable").hide();
 			page.find(".groups-enable__checkbox").attr('checked', null);
 		} else {
@@ -421,6 +422,11 @@ OC.Settings.Apps = OC.Settings.Apps || {
 		var apps = _.filter(OC.Settings.Apps.State.apps, function (app) {
 			return app.name.toLowerCase().indexOf(query) !== -1;
 		});
+
+		// App ID
+		apps = apps.concat(_.filter(OC.Settings.Apps.State.apps, function (app) {
+			return app.id.toLowerCase().indexOf(query) !== -1;
+		}));
 
 		// App Description
 		apps = apps.concat(_.filter(OC.Settings.Apps.State.apps, function (app) {

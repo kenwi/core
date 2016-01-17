@@ -1,12 +1,12 @@
 <?php
 /**
  * @author Morris Jobke <hey@morrisjobke.de>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Roeland Jago Douma <rullzer@owncloud.com>
  * @author Ross Nicoll <jrn@jrn.me.uk>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -43,6 +43,19 @@ class Application extends App {
 		\OC::$server->getEventDispatcher()->dispatch(
 			'OCA\\Files_External::loadAdditionalBackends'
 		);
+	}
+
+	/**
+	 * Register settings templates
+	 */
+	public function registerSettings() {
+		$container = $this->getContainer();
+		$backendService = $container->query('OCA\\Files_External\\Service\\BackendService');
+
+		\OCP\App::registerAdmin('files_external', 'settings');
+		if ($backendService->isUserMountingAllowed()) {
+			\OCP\App::registerPersonal('files_external', 'personal');
+		}
 	}
 
 	/**

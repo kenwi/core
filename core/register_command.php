@@ -4,12 +4,14 @@
  * @author Björn Schießle <schiessle@owncloud.com>
  * @author Christian Kampka <christian@kampka.net>
  * @author Joas Schilling <nickvergessen@owncloud.com>
+ * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
+ * @author Victor Dubiniuk <dubiniuk@owncloud.com>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -44,6 +46,7 @@ $application->add(new \OC\Core\Command\Integrity\SignCore(
 if (\OC::$server->getConfig()->getSystemValue('installed', false)) {
 	$application->add(new OC\Core\Command\App\Disable());
 	$application->add(new OC\Core\Command\App\Enable());
+	$application->add(new OC\Core\Command\App\GetPath());
 	$application->add(new OC\Core\Command\App\ListApps());
 
 	$application->add(new OC\Core\Command\Background\Cron(\OC::$server->getConfig()));
@@ -109,6 +112,10 @@ if (\OC::$server->getConfig()->getSystemValue('installed', false)) {
 	$application->add(new OC\Core\Command\User\LastSeen(\OC::$server->getUserManager()));
 	$application->add(new OC\Core\Command\User\Report(\OC::$server->getUserManager()));
 	$application->add(new OC\Core\Command\User\ResetPassword(\OC::$server->getUserManager()));
+
+	$application->add(new OC\Core\Command\Security\ListCertificates(\OC::$server->getCertificateManager(null), \OC::$server->getL10N('core')));
+	$application->add(new OC\Core\Command\Security\ImportCertificate(\OC::$server->getCertificateManager(null)));
+	$application->add(new OC\Core\Command\Security\RemoveCertificate(\OC::$server->getCertificateManager(null)));
 } else {
 	$application->add(new OC\Core\Command\Maintenance\Install(\OC::$server->getConfig()));
 }

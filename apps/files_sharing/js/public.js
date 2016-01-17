@@ -155,7 +155,11 @@ OCA.Sharing.PublicApp = {
 			this.fileList.getDownloadUrl = function (filename, dir, isDir) {
 				var path = dir || this.getCurrentDirectory();
 				if (filename && !_.isArray(filename) && !isDir) {
-					return OC.getRootPath() + '/public.php/webdav' + OC.joinPaths(path, filename);
+					var portPart = '';
+					if (OC.getPort()) {
+						portPart = ':' + OC.getPort();
+					}
+					return OC.getProtocol() + '://' + token + '@' + OC.getHost() + portPart + OC.getRootPath() + '/public.php/webdav' + OC.joinPaths(path, filename);
 				}
 				if (_.isArray(filename)) {
 					filename = JSON.stringify(filename);
@@ -242,9 +246,10 @@ OCA.Sharing.PublicApp = {
 			var remote = $(this).find('input[type="text"]').val();
 			var token = $('#sharingToken').val();
 			var owner = $('#save').data('owner');
+			var ownerDisplayName = $('#save').data('owner-display-name');
 			var name = $('#save').data('name');
 			var isProtected = $('#save').data('protected') ? 1 : 0;
-			OCA.Sharing.PublicApp._saveToOwnCloud(remote, token, owner, name, isProtected);
+			OCA.Sharing.PublicApp._saveToOwnCloud(remote, token, owner, ownerDisplayName, name, isProtected);
 		});
 
 		$('#remote_address').on("keyup paste", function() {
@@ -291,7 +296,7 @@ OCA.Sharing.PublicApp = {
 		this.fileList.changeDirectory(params.path || params.dir, false, true);
 	},
 
-	_saveToOwnCloud: function (remote, token, owner, name, isProtected) {
+	_saveToOwnCloud: function (remote, token, owner, ownerDisplayName, name, isProtected) {
 		var location = window.location.protocol + '//' + window.location.host + OC.webroot;
 		
 		if(remote.substr(-1) !== '/') {
@@ -299,7 +304,7 @@ OCA.Sharing.PublicApp = {
 		};
 
 		var url = remote + 'index.php/apps/files#' + 'remote=' + encodeURIComponent(location) // our location is the remote for the other server
-			+ "&token=" + encodeURIComponent(token) + "&owner=" + encodeURIComponent(owner) + "&name=" + encodeURIComponent(name) + "&protected=" + isProtected;
+			+ "&token=" + encodeURIComponent(token) + "&owner=" + encodeURIComponent(owner) +"&ownerDisplayName=" + encodeURIComponent(ownerDisplayName) + "&name=" + encodeURIComponent(name) + "&protected=" + isProtected;
 
 
 		if (remote.indexOf('://') > 0) {

@@ -12,14 +12,14 @@
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <icewind@owncloud.com>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Roeland Jago Douma <rullzer@owncloud.com>
  * @author Sander <brantje@gmail.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Thomas Tanghus <thomas@tanghus.net>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -78,14 +78,15 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
  *
  * TODO: hookup all manager classes
  */
-class Server extends SimpleContainer implements IServerContainer {
+class Server extends ServerContainer implements IServerContainer {
 	/** @var string */
 	private $webRoot;
 
 	/**
 	 * @param string $webRoot
+	 * @param \OC\Config $config
 	 */
-	public function __construct($webRoot) {
+	public function __construct($webRoot, \OC\Config $config) {
 		parent::__construct();
 		$this->webRoot = $webRoot;
 
@@ -238,11 +239,11 @@ class Server extends SimpleContainer implements IServerContainer {
 				$c->getSystemConfig()
 			);
 		});
-		$this->registerService('SystemConfig', function ($c) {
-			return new \OC\SystemConfig();
+		$this->registerService('SystemConfig', function ($c) use ($config) {
+			return new \OC\SystemConfig($config);
 		});
-		$this->registerService('AppConfig', function ($c) {
-			return new \OC\AppConfig(\OC_DB::getConnection());
+		$this->registerService('AppConfig', function (Server $c) {
+			return new \OC\AppConfig($c->getDatabaseConnection());
 		});
 		$this->registerService('L10NFactory', function ($c) {
 			return new \OC\L10N\Factory();
@@ -528,6 +529,13 @@ class Server extends SimpleContainer implements IServerContainer {
 			});
 			return $manager;
 		});
+		$this->registerService('CommentsManager', function(Server $c) {
+			$config = $c->getConfig();
+			$factoryClass = $config->getSystemValue('comments.managerFactory', '\OC\Comments\ManagerFactory');
+			/** @var \OCP\Comments\ICommentsManagerFactory $factory */
+			$factory = new $factoryClass();
+			return $factory->getManager();
+		});
 		$this->registerService('EventDispatcher', function() {
 			return new EventDispatcher();
 		});
@@ -545,7 +553,7 @@ class Server extends SimpleContainer implements IServerContainer {
 						? $_SERVER['REQUEST_METHOD']
 						: null,
 				],
-				new SecureRandom(),
+				$c->getSecureRandom(),
 				$c->getConfig()
 			);
 
@@ -555,6 +563,25 @@ class Server extends SimpleContainer implements IServerContainer {
 				$c->getSecureRandom(),
 				$request
 			);
+		});
+		$this->registerService('ShareManager', function(Server $c) {
+			$config = $c->getConfig();
+			$factoryClass = $config->getSystemValue('sharing.managerFactory', '\OC\Share20\ProviderFactory');
+			/** @var \OC\Share20\IProviderFactory $factory */
+			$factory = new $factoryClass();
+
+			$manager = new \OC\Share20\Manager(
+				$c->getLogger(),
+				$c->getConfig(),
+				$c->getSecureRandom(),
+				$c->getHasher(),
+				$c->getMountManager(),
+				$c->getGroupManager(),
+				$c->getL10N('core'),
+				$factory
+			);
+
+			return $manager;
 		});
 	}
 
@@ -913,11 +940,11 @@ class Server extends SimpleContainer implements IServerContainer {
 	/**
 	 * Get the certificate manager for the user
 	 *
-	 * @param string $userId (optional) if not specified the current loggedin user is used
+	 * @param string $userId (optional) if not specified the current loggedin user is used, use null to get the system certificate manager
 	 * @return \OCP\ICertificateManager | null if $uid is null and no user is logged in
 	 */
-	public function getCertificateManager($userId = null) {
-		if (is_null($userId)) {
+	public function getCertificateManager($userId = '') {
+		if ($userId === '') {
 			$userSession = $this->getUserSession();
 			$user = $userSession->getUser();
 			if (is_null($user)) {
@@ -1122,6 +1149,13 @@ class Server extends SimpleContainer implements IServerContainer {
 	}
 
 	/**
+	 * @return \OCP\Comments\ICommentsManager
+	 */
+	public function getCommentsManager() {
+		return $this->query('CommentsManager');
+	}
+
+	/**
 	 * @return \OC\IntegrityCheck\Checker
 	 */
 	public function getIntegrityCodeChecker() {
@@ -1166,5 +1200,12 @@ class Server extends SimpleContainer implements IServerContainer {
 	public function getUserStoragesService() {
 		return \OC_Mount_Config::$app->getContainer()->query('OCA\\Files_External\\Service\\UserStoragesService');
 	}
-	
+
+
+	/**
+	 * @return \OC\Share20\Manager
+	 */
+	public function getShareManager() {
+		return $this->query('ShareManager');
+	}
 }

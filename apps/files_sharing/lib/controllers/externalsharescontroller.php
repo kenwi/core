@@ -4,8 +4,9 @@
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Roeland Jago Douma <rullzer@owncloud.com>
+ * @author Scrutinizer Auto-Fixer <auto-fixer@scrutinizer-ci.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -45,7 +46,6 @@ class ExternalSharesController extends Controller {
 	/**
 	 * @param string $appName
 	 * @param IRequest $request
-	 * @param bool $incomingShareEnabled
 	 * @param \OCA\Files_Sharing\External\Manager $externalManager
 	 * @param IClientService $clientService
 	 */
@@ -84,7 +84,7 @@ class ExternalSharesController extends Controller {
 	 * @NoAdminRequired
 	 * @NoOutgoingFederatedSharingRequired
 	 *
-	 * @param $id
+	 * @param integer $id
 	 * @return JSONResponse
 	 */
 	public function destroy($id) {

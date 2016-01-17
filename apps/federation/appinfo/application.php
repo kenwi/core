@@ -1,8 +1,9 @@
 <?php
 /**
  * @author Björn Schießle <schiessle@owncloud.com>
+ * @author Robin Appelman <icewind@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -23,6 +24,7 @@ namespace OCA\Federation\AppInfo;
 
 use OCA\Federation\API\OCSAuthAPI;
 use OCA\Federation\Controller\SettingsController;
+use OCA\Federation\DAV\FedAuth;
 use OCA\Federation\DbHandler;
 use OCA\Federation\Hooks;
 use OCA\Federation\Middleware\AddServerMiddleware;
@@ -30,7 +32,9 @@ use OCA\Federation\TrustedServers;
 use OCP\API;
 use OCP\App;
 use OCP\AppFramework\IAppContainer;
+use OCP\SabrePluginEvent;
 use OCP\Util;
+use Sabre\DAV\Auth\Plugin;
 
 class Application extends \OCP\AppFramework\App {
 
@@ -108,7 +112,8 @@ class Application extends \OCP\AppFramework\App {
 			$server->getSecureRandom(),
 			$server->getJobList(),
 			$container->query('TrustedServers'),
-			$container->query('DbHandler')
+			$container->query('DbHandler'),
+			$server->getLogger()
 
 		);
 
@@ -143,6 +148,19 @@ class Application extends \OCP\AppFramework\App {
 				$hooksManager,
 				'addServerHook'
 		);
+
+		$dispatcher = $this->getContainer()->getServer()->getEventDispatcher();
+		$dispatcher->addListener('OCA\DAV\Connector\Sabre::authInit', function($event) use($container) {
+			if ($event instanceof SabrePluginEvent) {
+				$authPlugin = $event->getServer()->getPlugin('auth');
+				if ($authPlugin instanceof Plugin) {
+					$h = new DbHandler($container->getServer()->getDatabaseConnection(),
+							$container->getServer()->getL10N('federation')
+					);
+					$authPlugin->addBackend(new FedAuth($h));
+				}
+			}
+		});
 	}
 
 }

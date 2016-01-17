@@ -4,9 +4,10 @@
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Roeland Jago Douma <rullzer@owncloud.com>
+ * @author Scrutinizer Auto-Fixer <auto-fixer@scrutinizer-ci.com>
  * @author Tom Needham <tom@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -30,13 +31,13 @@ use OCP\IUserSession;
 use OCP\IRequest;
 
 class GroupsTest extends \Test\TestCase {
-	/** @var IGroupManager */
+	/** @var IGroupManager|\PHPUnit_Framework_MockObject_MockObject */
 	protected $groupManager;
-	/** @var IUserSession */
+	/** @var IUserSession|\PHPUnit_Framework_MockObject_MockObject */
 	protected $userSession;
-	/** @var IRequest */
+	/** @var IRequest|\PHPUnit_Framework_MockObject_MockObject */
 	protected $request;
-	/** @var \OC\SubAdmin */
+	/** @var \OC\SubAdmin|\PHPUnit_Framework_MockObject_MockObject */
 	protected $subAdminManager;
 	/** @var \OCA\Provisioning_API\Groups */
 	protected $api;
@@ -58,6 +59,10 @@ class GroupsTest extends \Test\TestCase {
 		);
 	}
 
+	/**
+	 * @param string $gid
+	 * @return \OCP\IGroup|\PHPUnit_Framework_MockObject_MockObject
+	 */
 	private function createGroup($gid) {
 		$group = $this->getMock('OCP\IGroup');
 		$group
@@ -66,6 +71,10 @@ class GroupsTest extends \Test\TestCase {
 		return $group;
 	}
 
+	/**
+	 * @param string $uid
+	 * @return \OCP\IUser|\PHPUnit_Framework_MockObject_MockObject
+	 */
 	private function createUser($uid) {
 		$user = $this->getMock('OCP\IUser');
 		$user
@@ -359,6 +368,27 @@ class GroupsTest extends \Test\TestCase {
 			->expects($this->once())
 			->method('createGroup')
 			->with('NewGroup');
+
+		$result = $this->api->addGroup([]);
+		$this->assertInstanceOf('OC_OCS_Result', $result);
+		$this->assertTrue($result->succeeded());
+	}
+
+	public function testAddGroupWithSpecialChar() {
+		$this->request
+			->method('getParam')
+			->with('groupid')
+			->willReturn('Iñtërnâtiônàlizætiøn');
+
+		$this->groupManager
+			->method('groupExists')
+			->with('Iñtërnâtiônàlizætiøn')
+			->willReturn(false);
+
+		$this->groupManager
+			->expects($this->once())
+			->method('createGroup')
+			->with('Iñtërnâtiônàlizætiøn');
 
 		$result = $this->api->addGroup([]);
 		$this->assertInstanceOf('OC_OCS_Result', $result);

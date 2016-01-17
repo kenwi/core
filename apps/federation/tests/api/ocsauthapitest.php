@@ -1,8 +1,9 @@
 <?php
 /**
  * @author Björn Schießle <schiessle@owncloud.com>
+ * @author Robin Appelman <icewind@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -28,6 +29,7 @@ use OCA\Federation\API\OCSAuthAPI;
 use OCA\Federation\DbHandler;
 use OCA\Federation\TrustedServers;
 use OCP\AppFramework\Http;
+use OCP\ILogger;
 use OCP\IRequest;
 use OCP\Security\ISecureRandom;
 use Test\TestCase;
@@ -49,6 +51,9 @@ class OCSAuthAPITest extends TestCase {
 	/** @var \PHPUnit_Framework_MockObject_MockObject | DbHandler */
 	private $dbHandler;
 
+	/** @var \PHPUnit_Framework_MockObject_MockObject | ILogger */
+	private $logger;
+
 	/** @var  OCSAuthApi */
 	private $ocsAuthApi;
 
@@ -63,13 +68,16 @@ class OCSAuthAPITest extends TestCase {
 			->disableOriginalConstructor()->getMock();
 		$this->jobList = $this->getMockBuilder('OC\BackgroundJob\JobList')
 			->disableOriginalConstructor()->getMock();
+		$this->logger = $this->getMockBuilder('OCP\ILogger')
+			->disableOriginalConstructor()->getMock();
 
 		$this->ocsAuthApi = new OCSAuthAPI(
 			$this->request,
 			$this->secureRandom,
 			$this->jobList,
 			$this->trustedServers,
-			$this->dbHandler
+			$this->dbHandler,
+			$this->logger
 		);
 
 	}
@@ -136,7 +144,8 @@ class OCSAuthAPITest extends TestCase {
 					$this->secureRandom,
 					$this->jobList,
 					$this->trustedServers,
-					$this->dbHandler
+					$this->dbHandler,
+					$this->logger
 				]
 			)->setMethods(['isValidToken'])->getMock();
 
@@ -147,8 +156,6 @@ class OCSAuthAPITest extends TestCase {
 			->method('isValidToken')->with($url, $token)->willReturn($isValidToken);
 
 		if($expected === Http::STATUS_OK) {
-			$this->secureRandom->expects($this->once())->method('getMediumStrengthGenerator')
-				->willReturn($this->secureRandom);
 			$this->secureRandom->expects($this->once())->method('generate')->with(32)
 				->willReturn('secret');
 			$this->trustedServers->expects($this->once())

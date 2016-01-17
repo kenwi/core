@@ -27,7 +27,6 @@ var MOUNT_OPTIONS_DROPDOWN_TEMPLATE =
 	'		<select id="mountOptionsFilesystemCheck" name="filesystem_check_changes" data-type="int">' +
 	'			<option value="0">{{t "files_external" "Never"}}</option>' +
 	'			<option value="1" selected="selected">{{t "files_external" "Once every direct access"}}</option>' +
-	'			<option value="2">{{t "files_external" "Every time the filesystem is used"}}</option>' +
 	'		</select>' +
 	'	</div>' +
 	'</div>';
@@ -39,7 +38,6 @@ var MOUNT_OPTIONS_DROPDOWN_TEMPLATE =
 	t("files_external", "Check for changes")
 	t("files_external", "Never")
 	t("files_external", "Once every direct access")
-	t("files_external", "Every time the filesystem is used")
 	 */
 
 /**
@@ -1211,13 +1209,6 @@ $(document).ready(function() {
 		encryptionEnabled: encryptionEnabled
 	});
 	mountConfigListView.loadStorages();
-
-	$('#sslCertificate').on('click', 'td.remove>img', function() {
-		var $tr = $(this).closest('tr');
-		$.post(OC.filePath('files_external', 'ajax', 'removeRootCertificate.php'), {cert: $tr.attr('id')});
-		$tr.remove();
-		return true;
-	});
 
 	// TODO: move this into its own View class
 	var $allowUserMounting = $('#allowUserMounting');

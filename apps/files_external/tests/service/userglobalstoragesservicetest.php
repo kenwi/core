@@ -1,9 +1,10 @@
 <?php
 /**
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin Appelman <icewind@owncloud.com>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -21,6 +22,7 @@
  */
 namespace OCA\Files_External\Tests\Service;
 
+use OCA\Files_external\NotFoundException;
 use OCA\Files_external\Service\StoragesService;
 use \OCA\Files_External\Service\UserGlobalStoragesService;
 use \OCP\IGroupManager;
@@ -140,6 +142,13 @@ class UserGlobalStoragesServiceTest extends GlobalStoragesServiceTest {
 			$this->assertEquals('/mountpoint', $retrievedStorage->getMountPoint());
 		} else {
 			$this->assertEquals(0, count($storages));
+
+			try {
+				$this->service->getStorage($newStorage->getId());
+				$this->fail('Failed asserting that storage can\'t be accessed by id');
+			} catch (NotFoundException $e) {
+
+			}
 		}
 
 	}
@@ -349,4 +358,8 @@ class UserGlobalStoragesServiceTest extends GlobalStoragesServiceTest {
 		$this->assertTrue(true);
 	}
 
+	public function testUpdateStorageMountPoint() {
+		// we don't test this here
+		$this->assertTrue(true);
+	}
 }

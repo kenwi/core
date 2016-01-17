@@ -68,7 +68,7 @@ var UserList = {
 			if (user.isAvatarAvailable === true) {
 				$('div.avatardiv', $tr).avatar(user.name, 32, undefined, undefined, undefined, user.displayname);
 			} else {
-				$('div.avatardiv', $tr).imageplaceholder(user.displayname);
+				$('div.avatardiv', $tr).imageplaceholder(user.displayname, undefined, 32);
 			}
 		}
 
@@ -259,6 +259,10 @@ var UserList = {
 		}
 	},
 	doSort: function() {
+		// some browsers like Chrome lose the scrolling information
+		// when messing with the list elements
+		var lastScrollTop = this.scrollArea.scrollTop();
+		var lastScrollLeft = this.scrollArea.scrollLeft();
 		var rows = $userListBody.find('tr').get();
 
 		rows.sort(function(a, b) {
@@ -284,6 +288,8 @@ var UserList = {
 		if(items.length > 0) {
 			$userListBody.append(items);
 		}
+		this.scrollArea.scrollTop(lastScrollTop);
+		this.scrollArea.scrollLeft(lastScrollLeft);
 	},
 	checkUsersToLoad: function() {
 		//30 shall be loaded initially, from then on always 10 upon scrolling
@@ -605,10 +611,11 @@ $(document).ready(function () {
 	// Implements User Search
 	OCA.Search.users= new UserManagementFilter(UserList, GroupList);
 
+	UserList.scrollArea = $('#app-content');
+
 	UserList.doSort();
 	UserList.availableGroups = $userList.data('groups');
 
-	UserList.scrollArea = $('#app-content');
 	UserList.scrollArea.scroll(function(e) {UserList._onScroll(e);});
 
 	$userList.after($('<div class="loading" style="height: 200px; visibility: hidden;"></div>'));
@@ -650,7 +657,7 @@ $(document).ready(function () {
 							{username: uid, password: $(this).val(), recoveryPassword: recoveryPasswordVal},
 							function (result) {
 								if (result.status != 'success') {
-									OC.Notification.show(t('admin', result.data.message));
+									OC.Notification.showTemporary(t('admin', result.data.message));
 								}
 							}
 						);
@@ -698,6 +705,8 @@ $(document).ready(function () {
 								}
 							}
 						);
+						var displayName = $input.val();
+						$tr.data('displayname', displayName);
 						$input.blur();
 					} else {
 						$input.blur();
@@ -705,8 +714,7 @@ $(document).ready(function () {
 				}
 			})
 			.blur(function () {
-				var displayName = $input.val();
-				$tr.data('displayname', displayName);
+				var displayName = $tr.data('displayname');
 				$input.replaceWith('<span>' + escapeHTML(displayName) + '</span>');
 				$td.find('img').show();
 			});
@@ -725,6 +733,7 @@ $(document).ready(function () {
 			.keypress(function (event) {
 				if (event.keyCode === 13) {
 					if ($(this).val().length > 0) {
+						$tr.data('mailAddress', $input.val());
 						$input.blur();
 						$.ajax({
 							type: 'PUT',
@@ -744,7 +753,7 @@ $(document).ready(function () {
 				}
 			})
 			.blur(function () {
-				var mailAddress = $input.val();
+				var mailAddress = $tr.data('mailAddress');
 				var $span = $('<span>').text(mailAddress);
 				$tr.data('mailAddress', mailAddress);
 				$input.replaceWith($span);

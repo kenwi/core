@@ -1,9 +1,10 @@
 <?php
 /**
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin Appelman <icewind@owncloud.com>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -464,5 +465,34 @@ abstract class StoragesServiceTest extends \Test\TestCase {
 			$applicable,
 			$params[Filesystem::signal_param_users]
 		);
+	}
+
+	public function testUpdateStorageMountPoint() {
+		$backend = $this->backendService->getBackend('identifier:\OCA\Files_External\Lib\Backend\SMB');
+		$authMechanism = $this->backendService->getAuthMechanism('identifier:\Auth\Mechanism');
+
+		$storage = new StorageConfig();
+		$storage->setMountPoint('mountpoint');
+		$storage->setBackend($backend);
+		$storage->setAuthMechanism($authMechanism);
+		$storage->setBackendOptions(['password' => 'testPassword']);
+
+		$savedStorage = $this->service->addStorage($storage);
+
+		$newAuthMechanism = $this->backendService->getAuthMechanism('identifier:\Other\Auth\Mechanism');
+
+		$updatedStorage = new StorageConfig($savedStorage->getId());
+		$updatedStorage->setMountPoint('mountpoint2');
+		$updatedStorage->setBackend($backend);
+		$updatedStorage->setAuthMechanism($newAuthMechanism);
+		$updatedStorage->setBackendOptions(['password' => 'password2']);
+
+		$this->service->updateStorage($updatedStorage);
+
+		$savedStorage = $this->service->getStorage($updatedStorage->getId());
+
+		$this->assertEquals('/mountpoint2', $savedStorage->getMountPoint());
+		$this->assertEquals($newAuthMechanism, $savedStorage->getAuthMechanism());
+		$this->assertEquals('password2', $savedStorage->getBackendOption('password'));
 	}
 }

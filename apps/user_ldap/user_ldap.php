@@ -6,12 +6,13 @@
  * @author Jörn Friedrich Dreyer <jfd@butonic.de>
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Renaud Fortier <Renaud.Fortier@fsaa.ulaval.ca>
  * @author Robin Appelman <icewind@owncloud.com>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Tom Needham <tom@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -30,6 +31,7 @@
 
 namespace OCA\user_ldap;
 
+use OC\User\NoUserException;
 use OCA\user_ldap\lib\BackendUtility;
 use OCA\user_ldap\lib\Access;
 use OCA\user_ldap\lib\user\OfflineUser;
@@ -117,6 +119,7 @@ class USER_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 		try {
 			$ldapRecord = $this->getLDAPUserByLoginName($uid);
 		} catch(\Exception $e) {
+			\OC::$server->getLogger()->logException($e, ['app' => 'user_ldap']);
 			return false;
 		}
 		$dn = $ldapRecord['dn'][0];
@@ -190,26 +193,44 @@ class USER_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 
 	/**
 	 * checks whether a user is still available on LDAP
+	 *
 	 * @param string|\OCA\User_LDAP\lib\user\User $user either the ownCloud user
 	 * name or an instance of that user
 	 * @return bool
+	 * @throws \Exception
+	 * @throws \OC\ServerNotAvailableException
 	 */
 	public function userExistsOnLDAP($user) {
 		if(is_string($user)) {
 			$user = $this->access->userManager->get($user);
 		}
-		if(!$user instanceof User) {
+		if(is_null($user)) {
 			return false;
 		}
 
 		$dn = $user->getDN();
 		//check if user really still exists by reading its entry
-		if(!is_array($this->access->readAttribute($dn, ''))) {
+		if(!is_array($this->access->readAttribute($dn, '', $this->access->connection->ldapUserFilter))) {
 			$lcr = $this->access->connection->getConnectionResource();
 			if(is_null($lcr)) {
 				throw new \Exception('No LDAP Connection to server ' . $this->access->connection->ldapHost);
 			}
-			return false;
+
+			try {
+				$uuid = $this->access->getUserMapper()->getUUIDByDN($dn);
+				if(!$uuid) {
+					return false;
+				}
+				$newDn = $this->access->getUserDnByUuid($uuid);
+				$this->access->getUserMapper()->setDNbyUUID($newDn, $uuid);
+				return true;
+			} catch (\Exception $e) {
+				return false;
+			}
+		}
+
+		if($user instanceof OfflineUser) {
+			$user->unmark();
 		}
 
 		return true;
@@ -274,10 +295,13 @@ class USER_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 	}
 
 	/**
-	* get the user's home directory
-	* @param string $uid the username
-	* @return string|bool
-	*/
+	 * get the user's home directory
+	 *
+	 * @param string $uid the username
+	 * @return bool|string
+	 * @throws NoUserException
+	 * @throws \Exception
+	 */
 	public function getHome($uid) {
 		if(isset($this->homesToKill[$uid]) && !empty($this->homesToKill[$uid])) {
 			//a deleted user who needs some clean up
@@ -295,6 +319,15 @@ class USER_LDAP extends BackendUtility implements \OCP\IUserBackend, \OCP\UserIn
 		}
 
 		$user = $this->access->userManager->get($uid);
+		if(is_null($user) || ($user instanceof OfflineUser && !$this->userExistsOnLDAP($user->getOCName()))) {
+			throw new NoUserException($uid . ' is not a valid user anymore');
+		}
+		if($user instanceof OfflineUser) {
+			// apparently this user survived the userExistsOnLDAP check,
+			// we request the user instance again in order to retrieve a User
+			// instance instead
+			$user = $this->access->userManager->get($uid);
+		}
 		$path = $user->getHomePath();
 		$this->access->cacheUserHome($uid, $path);
 

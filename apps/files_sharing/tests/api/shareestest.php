@@ -2,8 +2,10 @@
 /**
  * @author Joas Schilling <nickvergessen@owncloud.com>
  * @author Roeland Jago Douma <rullzer@owncloud.com>
+ * @author Scrutinizer Auto-Fixer <auto-fixer@scrutinizer-ci.com>
+ * @author Thomas Müller <thomas.mueller@tmit.eu>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -88,6 +90,11 @@ class ShareesTest extends TestCase {
 		);
 	}
 
+	/**
+	 * @param string $uid
+	 * @param string $displayName
+	 * @return \OCP\IUser|\PHPUnit_Framework_MockObject_MockObject
+	 */
 	protected function getUserMock($uid, $displayName) {
 		$user = $this->getMockBuilder('OCP\IUser')
 			->disableOriginalConstructor()
@@ -104,6 +111,10 @@ class ShareesTest extends TestCase {
 		return $user;
 	}
 
+	/**
+	 * @param string $gid
+	 * @return \OCP\IGroup|\PHPUnit_Framework_MockObject_MockObject
+	 */
 	protected function getGroupMock($gid) {
 		$group = $this->getMockBuilder('OCP\IGroup')
 			->disableOriginalConstructor()
@@ -1034,6 +1045,10 @@ class ShareesTest extends TestCase {
 			[[], 'no', 'yes',  true, '', null, $allTypes, 1, 200, false, true],
 			[[], 'no', 'no', true, '', null, $allTypes, 1, 200, false, false],
 
+			// Test keep case for search
+			[[
+				'search' => 'foo@example.com/ownCloud',
+			], '', 'yes', true, 'foo@example.com/ownCloud', null, $allTypes, 1, 200, false, true],
 		];
 	}
 

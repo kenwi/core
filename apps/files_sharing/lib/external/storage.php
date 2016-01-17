@@ -6,7 +6,7 @@
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -265,4 +265,12 @@ class Storage extends DAV implements ISharedStorage {
 		list(, $remote) = explode('://', $this->remote, 2);
 		return $this->remoteUser . '@' . $remote;
 	}
+
+	public function isSharable($path) {
+		if (\OCP\Util::isSharingDisabledForUser() || !\OC\Share\Share::isResharingAllowed()) {
+			return false;
+		}
+		return ($this->getPermissions($path) & \OCP\Constants::PERMISSION_SHARE);
+	}
+
 }

@@ -56,7 +56,7 @@ if ($_['mail_smtpmode'] == 'qmail') {
 			if (isset($form['anchor'])) {
 				$anchor = '#' . $form['anchor'];
 				$sectionName = $form['section-name'];
-				print_unescaped(sprintf("<li><a href='%s'>%s</a></li>", OC_Util::sanitizeHTML($anchor), OC_Util::sanitizeHTML($sectionName)));
+				print_unescaped(sprintf("<li><a href='%s'>%s</a></li>", \OCP\Util::sanitizeHTML($anchor), \OCP\Util::sanitizeHTML($sectionName)));
 			}
 		}?>
 	</ul>
@@ -177,17 +177,11 @@ if ($_['cronErrors']) {
 ?>
 </ul>
 
-<div id="postsetupchecks">
+<div id="postsetupchecks" data-check-wellknown="<?php if($_['checkForWorkingWellKnownSetup']) { p('true'); } else { p('false'); } ?>">
 	<div class="loading"></div>
 	<ul class="errors hidden"></ul>
 	<ul class="warnings hidden"></ul>
-	<ul class="info hidden">
-		<?php if ($_['fileLockingType'] === 'db'):?>
-		<li>
-			<?php print_unescaped($l->t('Transactional file locking is using the database as locking backend, for best performance it\'s advised to configure a memcache for locking. See the <a target="_blank" href="%s">documentation ↗</a> for more information.', link_to_docs('admin-transactional-locking'))); ?>
-		</li>
-		<?php endif; ?>
-	</ul>
+	<ul class="info hidden"></ul>
 	<p class="hint hidden">
 		<?php print_unescaped($l->t('Please double check the <a target="_blank" href="%s">installation guides ↗</a>, and check for any errors or warnings in the <a href="#log-section">log</a>.', link_to_docs('admin-install'))); ?>
 	</p>
@@ -568,11 +562,11 @@ if ($_['cronErrors']) {
 
 <div class="section">
 	<h2><?php p($l->t('Version'));?></h2>
-	<strong><?php p($theme->getTitle()); ?></strong> <?php p(OC_Util::getHumanVersion()) ?>
-	<?php include('settings.development.notice.php'); ?>
+	<p><a href="<?php print_unescaped($theme->getBaseUrl()); ?>" target="_blank"><?php p($theme->getTitle()); ?></a> <?php p(OC_Util::getHumanVersion()) ?></p>
+	<p><?php include('settings.development.notice.php'); ?></p>
 </div>
 
-<div class="section credits-footer">
-	<p><?php print_unescaped($theme->getShortFooter()); ?></p>
-</div>
+
+
+
 </div>

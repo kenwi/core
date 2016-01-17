@@ -1,10 +1,13 @@
 <?php
 /**
+ * @author Jesús Macias <jmacias@solidgear.es>
  * @author Lukas Reschke <lukas@owncloud.com>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin Appelman <icewind@owncloud.com>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
+ * @author Scrutinizer Auto-Fixer <auto-fixer@scrutinizer-ci.com>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -23,12 +26,9 @@
 
 namespace OCA\Files_external\Service;
 
-use \OCP\IUserSession;
 use \OC\Files\Filesystem;
-
 use \OCA\Files_external\Lib\StorageConfig;
 use \OCA\Files_external\NotFoundException;
-use \OCA\Files_External\Service\BackendService;
 use \OCA\Files_External\Lib\Backend\Backend;
 use \OCA\Files_External\Lib\Auth\AuthMechanism;
 use \OCP\Files\StorageNotAvailableException;
@@ -85,6 +85,7 @@ abstract class StoragesService {
 				array_values($applicableGroups),
 				$mount['priority']
 			);
+			$config->setType($mount['type']);
 			$config->setId((int)$mount['mount_id']);
 			return $config;
 		} catch (\UnexpectedValueException $e) {
@@ -132,8 +133,21 @@ abstract class StoragesService {
 			throw new NotFoundException('Storage with id "' . $id . '" not found');
 		}
 
-		return $this->getStorageConfigFromDBMount($mount);
+		$config = $this->getStorageConfigFromDBMount($mount);
+		if ($this->isApplicable($config)) {
+			return $config;
+		} else {
+			throw new NotFoundException('Storage with id "' . $id . '" not found');
+		}
 	}
+
+	/**
+	 * Check whether this storage service should provide access to a storage
+	 *
+	 * @param StorageConfig $config
+	 * @return bool
+	 */
+	abstract protected function isApplicable(StorageConfig $config);
 
 	/**
 	 * Gets all storages, valid or not
@@ -185,6 +199,9 @@ abstract class StoragesService {
 	 */
 	abstract public function getVisibilityType();
 
+	/**
+	 * @return integer
+	 */
 	protected function getType() {
 		return DBConfigService::MOUNT_TYPE_ADMIN;
 	}
@@ -355,8 +372,8 @@ abstract class StoragesService {
 
 		$oldUserCount = count($oldStorage->getApplicableUsers());
 		$oldGroupCount = count($oldStorage->getApplicableGroups());
-		$newUserCount = count($oldStorage->getApplicableUsers());
-		$newGroupCount = count($oldStorage->getApplicableGroups());
+		$newUserCount = count($updatedStorage->getApplicableUsers());
+		$newGroupCount = count($updatedStorage->getApplicableGroups());
 		$wasGlobal = ($oldUserCount + $oldGroupCount) === 0;
 		$isGlobal = ($newUserCount + $newGroupCount) === 0;
 
@@ -387,6 +404,14 @@ abstract class StoragesService {
 		}
 		foreach ($changedOptions as $key => $value) {
 			$this->dbConfig->setOption($id, $key, $value);
+		}
+
+		if ($updatedStorage->getMountPoint() !== $oldStorage->getMountPoint()) {
+			$this->dbConfig->setMountPoint($id, $updatedStorage->getMountPoint());
+		}
+
+		if ($updatedStorage->getAuthMechanism()->getIdentifier() !== $oldStorage->getAuthMechanism()->getIdentifier()) {
+			$this->dbConfig->setAuthBackend($id, $updatedStorage->getAuthMechanism()->getIdentifier());
 		}
 
 		$this->triggerChangeHooks($oldStorage, $updatedStorage);

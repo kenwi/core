@@ -3,8 +3,9 @@
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Roeland Jago Douma <rullzer@owncloud.com>
+ * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -92,6 +93,7 @@ class ApiControllerTest extends TestCase {
 			[
 				'mtime' => 55,
 				'mimetype' => 'application/pdf',
+				'permissions' => 31,
 				'size' => 1234,
 				'etag' => 'MyEtag',
 			],
@@ -111,7 +113,7 @@ class ApiControllerTest extends TestCase {
 					'parentId' => null,
 					'mtime' => 55000,
 					'name' => 'root.txt',
-					'permissions' => null,
+					'permissions' => 31,
 					'mimetype' => 'application/pdf',
 					'size' => 1234,
 					'type' => 'file',
@@ -139,6 +141,7 @@ class ApiControllerTest extends TestCase {
 			[
 				'mtime' => 55,
 				'mimetype' => 'application/pdf',
+				'permissions' => 31,
 				'size' => 1234,
 				'etag' => 'MyEtag',
 			],
@@ -155,6 +158,7 @@ class ApiControllerTest extends TestCase {
 			[
 				'mtime' => 999,
 				'mimetype' => 'application/binary',
+				'permissions' => 31,
 				'size' => 9876,
 				'etag' => 'SubEtag',
 			],
@@ -174,7 +178,7 @@ class ApiControllerTest extends TestCase {
 					'parentId' => null,
 					'mtime' => 55000,
 					'name' => 'root.txt',
-					'permissions' => null,
+					'permissions' => 31,
 					'mimetype' => 'application/pdf',
 					'size' => 1234,
 					'type' => 'file',
@@ -191,7 +195,7 @@ class ApiControllerTest extends TestCase {
 					'parentId' => null,
 					'mtime' => 999000,
 					'name' => 'root.txt',
-					'permissions' => null,
+					'permissions' => 31,
 					'mimetype' => 'application/binary',
 					'size' => 9876,
 					'type' => 'file',

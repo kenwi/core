@@ -54,6 +54,7 @@
     "Archives of type %s are not supported" : "ประเภทข้อมูลที่เก็บของ %s ไม่ได้รับการสนับสนุน",
     "Failed to open archive when installing app" : "ไม่สามารถเปิดที่เก็บข้อมูลเมื่อกำลังติดตั้งแอพพลิเคชั่น",
     "App does not provide an info.xml file" : "แอพฯ ไม่ได้ระบุไฟล์ info.xml",
+    "Signature could not get checked. Please contact the app developer and check your admin screen." : "ไม่สามารถตรวจสอบลายเซ็น โปรดติดต่อนักพัฒนาแอพพลิเคชันและตรวจสอบหน้าจอแผงควบคุมระบบของคุณ",
     "App can't be installed because of not allowed code in the App" : "ไม่สามารถติดตั้งแอพพลิเคชันเพราะไม่ได้อนุญาตรหัสในแอพพลิเคชัน",
     "App can't be installed because it is not compatible with this version of ownCloud" : "ไม่สามารถติดตั้งแอพพลิเคชันเพราะมันเข้ากันไม่ได้กับรุ่นของ ownCloud นี้",
     "App can't be installed because it contains the <shipped>true</shipped> tag which is not allowed for non shipped apps" : "ไม่สามารถติดตั้งแอพพลิเคชันเพราะมันมี <shipped>จริง</shipped> แท็กที่ไม่ได้รับอนุญาต",
@@ -94,6 +95,7 @@
     "Sharing %s failed, because %s is not a member of the group %s" : "การแชร์ %s ล้มเหลวเพราะ %s ไม่ได้เป็นสมาชิกของกลุ่ม %s",
     "You need to provide a password to create a public link, only protected links are allowed" : "คุณจำเป็นต้องระบุรหัสผ่านเพื่อสร้างลิงค์สาธารณะ, ลิงค์ที่มีการป้องกันเท่านั้นที่ได้รับอนุญาต",
     "Sharing %s failed, because sharing with links is not allowed" : "การแชร์ %s ล้มเหลวเพราะมีการแชร์ลิงค์ไม่ได้รับอนุญาต",
+    "Not allowed to create a federated share with the same user" : "ไม่อนุญาตให้สร้างแชร์สหพันธ์กับผู้ใช้เดียวกัน",
     "Sharing %s failed, could not find %s, maybe the server is currently unreachable." : "การแชร์ %s ล้มเหลวไม่สามารถหา %s, บางทีอาจจะยังไม่สามารถเข้าถึงเซิร์ฟเวอร์ปัจจุบัน",
     "Share type %s is not valid for %s" : "ประเภท %s ที่แชร์ไม่ถูกต้องสำหรับ %s",
     "Setting permissions for %s failed, because the permissions exceed permissions granted to %s" : "การตั้งค่าสิทธิ์สำหรับ %s ล้มเหลวเพราะเกินสิทธิ์ที่ได้อนุญาตให้ %s",
@@ -109,6 +111,9 @@
     "Sharing %s failed, because resharing is not allowed" : "การแชร์ %s ล้มเหลวเพราะการแชร์ต่อไม่ได้รับอนุญาต",
     "Sharing %s failed, because the sharing backend for %s could not find its source" : "การแชร์ %s ล้มเหลวเพราะการแชร์แบ็กเอนด์สำหรับ %s ไม่สามารถหาแหล่งที่มา",
     "Sharing %s failed, because the file could not be found in the file cache" : "การแชร์ %s ล้มเหลวเพราะไม่พบไฟล์ในแคชไฟล์",
+    "Cannot increase permissions of %s" : "ไม่สามารถเพิ่มสิทธิ์ของ %s",
+    "Expiration date is in the past" : "วันหมดอายุอยู่ในอดีตที่ผ่านมา",
+    "Cannot set expiration date more than %s days in the future" : "ไม่สามารถกำหนดวันหมดอายุให้มากกว่า %s วันในอนาคต",
     "Could not find category \"%s\"" : "ไม่พบหมวดหมู่ \"%s\"",
     "Apps" : "แอปฯ",
     "Only the following characters are allowed in a username: \"a-z\", \"A-Z\", \"0-9\", and \"_.@-\"" : "ตัวอักษรที่อนุญาตให้ใช้ในชื่อผู้ใช้: \"a-z\", \"A-Z\", \"0-9\"  และ \"_.@-\"",
@@ -145,6 +150,10 @@
     "Data directory (%s) is invalid" : "ไดเรกทอรีข้อมูล (%s) ไม่ถูกต้อง",
     "Please check that the data directory contains a file \".ocdata\" in its root." : "กรุณาตรวจสอบว่าไดเรกทอรีข้อมูลมีแฟ้ม \".ocdata\" อยู่ในราก",
     "Could not obtain lock type %d on \"%s\"." : "ไม่สามารถรับล็อคชนิด %d บน \"%s\"",
-    "Storage not available" : "ไม่สามารถใช้พื้นที่จัดเก็บข้อมูลได้"
+    "Storage unauthorized. %s" : "การจัดเก็บข้อมูลไม่ได้รับอนุญาต %s",
+    "Storage incomplete configuration. %s" : "การตั้งค่าการจัดเก็บข้อมูลไม่สำเร็จ %s",
+    "Storage connection error. %s" : "ข้อผิดพลาดการเชื่อมต่อพื้นที่จัดเก็บข้อมูล %s",
+    "Storage not available" : "ไม่สามารถใช้พื้นที่จัดเก็บข้อมูลได้",
+    "Storage connection timeout. %s" : "หมดเวลาการเชื่อมต่อพื้นที่จัดเก็บข้อมูล %s"
 },"pluralForm" :"nplurals=1; plural=0;"
 }

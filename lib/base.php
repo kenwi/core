@@ -26,16 +26,16 @@
  * @author Phil Davis <phil.davis@inf.org>
  * @author Ramiro Aparicio <rapariciog@gmail.com>
  * @author Robin Appelman <icewind@owncloud.com>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
+ * @author Roeland Jago Douma <rullzer@owncloud.com>
  * @author scolebrook <scolebrook@mac.com>
- * @author Stefan Herbrechtsmeier <stefan@herbrechtsmeier.net>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Thomas Tanghus <thomas@tanghus.net>
  * @author Victor Dubiniuk <dubiniuk@owncloud.com>
  * @author Vincent Petry <pvince81@owncloud.com>
  * @author Volkan Gezer <volkangezer@gmail.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -113,6 +113,11 @@ class OC {
 	public static $server = null;
 
 	/**
+	 * @var \OC\Config
+	 */
+	private static $config = null;
+
+	/**
 	 * @throws \RuntimeException when the 3rdparty directory is missing or
 	 * the app path list is empty or contains an invalid path
 	 */
@@ -124,7 +129,7 @@ class OC {
 		} else {
 			self::$configDir = OC::$SERVERROOT . '/config/';
 		}
-		OC_Config::$object = new \OC\Config(self::$configDir);
+		self::$config = new \OC\Config(self::$configDir);
 
 		OC::$SUBURI = str_replace("\\", "/", substr(realpath($_SERVER["SCRIPT_FILENAME"]), strlen(OC::$SERVERROOT)));
 		/**
@@ -137,7 +142,7 @@ class OC {
 				'SCRIPT_FILENAME' => $_SERVER['SCRIPT_FILENAME'],
 			],
 		];
-		$fakeRequest = new \OC\AppFramework\Http\Request($params, null, new \OC\AllConfig(new \OC\SystemConfig()));
+		$fakeRequest = new \OC\AppFramework\Http\Request($params, null, new \OC\AllConfig(new \OC\SystemConfig(self::$config)));
 		$scriptName = $fakeRequest->getScriptName();
 		if (substr($scriptName, -1) == '/') {
 			$scriptName .= 'index.php';
@@ -152,7 +157,7 @@ class OC {
 
 
 		if (OC::$CLI) {
-			OC::$WEBROOT = OC_Config::getValue('overwritewebroot', '');
+			OC::$WEBROOT = self::$config->getValue('overwritewebroot', '');
 		} else {
 			if (substr($scriptName, 0 - strlen(OC::$SUBURI)) === OC::$SUBURI) {
 				OC::$WEBROOT = substr($scriptName, 0, 0 - strlen(OC::$SUBURI));
@@ -165,7 +170,7 @@ class OC {
 				// This most likely means that we are calling from CLI.
 				// However some cron jobs still need to generate
 				// a web URL, so we use overwritewebroot as a fallback.
-				OC::$WEBROOT = OC_Config::getValue('overwritewebroot', '');
+				OC::$WEBROOT = self::$config->getValue('overwritewebroot', '');
 			}
 
 			// Resolve /owncloud to /owncloud/ to ensure to always have a trailing
@@ -178,8 +183,8 @@ class OC {
 		}
 
 		// search the 3rdparty folder
-		OC::$THIRDPARTYROOT = OC_Config::getValue('3rdpartyroot', null);
-		OC::$THIRDPARTYWEBROOT = OC_Config::getValue('3rdpartyurl', null);
+		OC::$THIRDPARTYROOT = self::$config->getValue('3rdpartyroot', null);
+		OC::$THIRDPARTYWEBROOT = self::$config->getValue('3rdpartyurl', null);
 
 		if (empty(OC::$THIRDPARTYROOT) && empty(OC::$THIRDPARTYWEBROOT)) {
 			if (file_exists(OC::$SERVERROOT . '/3rdparty')) {
@@ -197,7 +202,7 @@ class OC {
 		}
 
 		// search the apps folder
-		$config_paths = OC_Config::getValue('apps_paths', array());
+		$config_paths = self::$config->getValue('apps_paths', array());
 		if (!empty($config_paths)) {
 			foreach ($config_paths as $paths) {
 				if (isset($paths['url']) && isset($paths['path'])) {
@@ -372,7 +377,7 @@ class OC {
 
 		// check whether this is a core update or apps update
 		$installedVersion = $systemConfig->getValue('version', '0.0.0');
-		$currentVersion = implode('.', OC_Util::getVersion());
+		$currentVersion = implode('.', \OCP\Util::getVersion());
 
 		$appManager = \OC::$server->getAppManager();
 
@@ -387,7 +392,7 @@ class OC {
 		}
 
 		// get third party apps
-		$ocVersion = OC_Util::getVersion();
+		$ocVersion = \OCP\Util::getVersion();
 		$tmpl->assign('appsToUpgrade', $appManager->getAppsNeedingUpgrade($ocVersion));
 		$tmpl->assign('incompatibleAppsList', $appManager->getIncompatibleApps($ocVersion));
 		$tmpl->assign('productName', 'ownCloud'); // for now
@@ -426,30 +431,17 @@ class OC {
 			//show the user a detailed error page
 			OC_Response::setStatus(OC_Response::STATUS_INTERNAL_SERVER_ERROR);
 			OC_Template::printExceptionErrorPage($e);
+			die();
 		}
 
 		$sessionLifeTime = self::getSessionLifeTime();
-		// regenerate session id periodically to avoid session fixation
-		/**
-		 * @var \OCP\ISession $session
-		 */
-		$session = self::$server->getSession();
-		if (!$session->exists('SID_CREATED')) {
-			$session->set('SID_CREATED', time());
-		} else if (time() - $session->get('SID_CREATED') > $sessionLifeTime / 2) {
-			session_regenerate_id(true);
-			$session->set('SID_CREATED', time());
-		}
 
 		// session timeout
 		if ($session->exists('LAST_ACTIVITY') && (time() - $session->get('LAST_ACTIVITY') > $sessionLifeTime)) {
 			if (isset($_COOKIE[session_name()])) {
 				setcookie(session_name(), null, -1, self::$WEBROOT ? : '/');
-				unset($_COOKIE[session_name()]);
 			}
-			session_unset();
-			session_destroy();
-			session_start();
+			$session->clear();
 		}
 
 		$session->set('LAST_ACTIVITY', time());
@@ -464,7 +456,12 @@ class OC {
 
 	public static function loadAppClassPaths() {
 		foreach (OC_APP::getEnabledApps() as $app) {
-			$file = OC_App::getAppPath($app) . '/appinfo/classpath.php';
+			$appPath = OC_App::getAppPath($app);
+			if ($appPath === false) {
+				continue;
+			}
+
+			$file = $appPath . '/appinfo/classpath.php';
 			if (file_exists($file)) {
 				require_once $file;
 			}
@@ -491,9 +488,10 @@ class OC {
 			OC::$SERVERROOT . '/settings',
 			OC::$SERVERROOT . '/ocs',
 			OC::$SERVERROOT . '/ocs-provider',
-			OC::$SERVERROOT . '/3rdparty',
-			OC::$SERVERROOT . '/tests',
 		]);
+		if (defined('PHPUNIT_RUN')) {
+			self::$loader->addValidRoot(OC::$SERVERROOT . '/tests');
+		}
 		spl_autoload_register(array(self::$loader, 'load'));
 		$loaderEnd = microtime(true);
 
@@ -517,7 +515,7 @@ class OC {
 		}
 
 		// setup the basic server
-		self::$server = new \OC\Server(\OC::$WEBROOT);
+		self::$server = new \OC\Server(\OC::$WEBROOT, self::$config);
 		\OC::$server->getEventLogger()->log('autoloader', 'Autoloader', $loaderStart, $loaderEnd);
 		\OC::$server->getEventLogger()->start('boot', 'Initialize');
 
@@ -875,7 +873,7 @@ class OC {
 
 		// Handle redirect URL for logged in users
 		if (isset($_REQUEST['redirect_url']) && OC_User::isLoggedIn()) {
-			$location = OC_Helper::makeURLAbsolute(urldecode($_REQUEST['redirect_url']));
+			$location = \OC::$server->getURLGenerator()->getAbsoluteURL(urldecode($_REQUEST['redirect_url']));
 
 			// Deny the redirect if the URL contains a @
 			// This prevents unvalidated redirects like ?redirect_url=:user@domain.com
@@ -1055,7 +1053,7 @@ class OC {
 			return false;
 		}
 
-		if(!OC_Util::isCallRegistered()) {
+		if(!(\OC::$server->getRequest()->passesCSRFCheck())) {
 			return false;
 		}
 		OC_App::loadApps();
@@ -1078,7 +1076,7 @@ class OC {
 				if ($config->getSystemValue('debug', false)) {
 					self::$server->getLogger()->debug('Setting remember login to cookie', array('app' => 'core'));
 				}
-				$token = \OC::$server->getSecureRandom()->getMediumStrengthGenerator()->generate(32);
+				$token = \OC::$server->getSecureRandom()->generate(32);
 				$config->setUserValue($userId, 'login_token', $token, time());
 				OC_User::setMagicInCookie($userId, $token);
 			} else {

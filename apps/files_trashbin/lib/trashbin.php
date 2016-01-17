@@ -11,14 +11,15 @@
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Qingping Hou <dave2008713@gmail.com>
  * @author Robin Appelman <icewind@owncloud.com>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Roeland Jago Douma <rullzer@owncloud.com>
+ * @author Scrutinizer Auto-Fixer <auto-fixer@scrutinizer-ci.com>
  * @author Sjors van der Pluijm <sjors@desjors.nl>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Victor Dubiniuk <dubiniuk@owncloud.com>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -62,7 +63,11 @@ class Trashbin {
 	 * @param array $params
 	 */
 	public static function ensureFileScannedHook($params) {
-		self::getUidAndFilename($params['path']);
+		try {
+			self::getUidAndFilename($params['path']);
+		} catch (NotFoundException $e) {
+			// nothing to scan for non existing files
+		}
 	}
 
 	/**
@@ -71,18 +76,7 @@ class Trashbin {
 	 * @throws \OC\User\NoUserException
 	 */
 	public static function getUidAndFilename($filename) {
-		$uid = \OC\Files\Filesystem::getOwner($filename);
-		\OC\Files\Filesystem::initMountPoints($uid);
-		if ($uid != \OCP\User::getUser()) {
-			$info = \OC\Files\Filesystem::getFileInfo($filename);
-			$ownerView = new \OC\Files\View('/' . $uid . '/files');
-			try {
-				$filename = $ownerView->getPath($info['fileid']);
-			} catch (NotFoundException $e) {
-				$filename = null;
-			}
-		}
-		return [$uid, $filename];
+		return Filesystem::getView()->getUidAndFilename($filename);
 	}
 
 	/**
@@ -147,7 +141,7 @@ class Trashbin {
 	 *
 	 * @param string $sourcePath
 	 * @param string $owner
-	 * @param $targetPath
+	 * @param string $targetPath
 	 * @param $user
 	 * @param integer $timestamp
 	 */
@@ -410,7 +404,7 @@ class Trashbin {
 	 * @param string $uniqueFilename new file name to restore the file without overwriting existing files
 	 * @param string $location location if file
 	 * @param int $timestamp deletion time
-	 * @return bool
+	 * @return false|null
 	 */
 	private static function restoreVersions(\OC\Files\View $view, $file, $filename, $uniqueFilename, $location, $timestamp) {
 
@@ -500,9 +494,10 @@ class Trashbin {
 
 	/**
 	 * @param \OC\Files\View $view
-	 * @param $file
-	 * @param $filename
-	 * @param $timestamp
+	 * @param string $file
+	 * @param string $filename
+	 * @param integer|null $timestamp
+	 * @param string $user
 	 * @return int
 	 */
 	private static function deleteVersions(\OC\Files\View $view, $file, $filename, $timestamp, $user) {
@@ -684,7 +679,7 @@ class Trashbin {
 	 *
 	 * @param array $files list of files sorted by mtime
 	 * @param string $user
-	 * @return array size of deleted files and number of deleted files
+	 * @return integer[] size of deleted files and number of deleted files
 	 */
 	public static function deleteExpiredFiles($files, $user) {
 		$application = new Application();

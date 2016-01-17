@@ -2,7 +2,7 @@
 /**
  * @author Robin Appelman <icewind@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -21,10 +21,12 @@
 
 namespace OC\Files\Cache;
 
+use OCP\Files\Cache\IPropagator;
+
 /**
  * Propagate etags and mtimes within the storage
  */
-class Propagator {
+class Propagator implements IPropagator {
 	/**
 	 * @var \OC\Files\Storage\Storage
 	 */
@@ -41,7 +43,7 @@ class Propagator {
 	/**
 	 * @param string $internalPath
 	 * @param int $time
-	 * @return array[] all propagated entries
+	 * @return array[] all propagated cache entries
 	 */
 	public function propagateChange($internalPath, $time) {
 		$cache = $this->storage->getCache($internalPath);

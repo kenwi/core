@@ -2,13 +2,14 @@
 /**
  * @author Andreas Fischer <bantu@owncloud.com>
  * @author Bart Visscher <bartv@thisnet.nl>
+ * @author Christian Schnidrig <christian.schnidrig@switch.ch>
  * @author Georg Ehrke <georg@owncloud.com>
  * @author Michael Gapczynski <GapczynskiM@gmail.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <icewind@owncloud.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -73,7 +74,7 @@ class OC_Log_Owncloud {
 		} catch (Exception $e) {
 			$timezone = new DateTimeZone('UTC');
 		}
-		$time = DateTime::createFromFormat("U.u", microtime(true), $timezone);
+		$time = DateTime::createFromFormat("U.u", number_format(microtime(true), 4, ".", ""), $timezone);
 		if ($time === false) {
 			$time = new DateTime(null, $timezone);
 		}
@@ -100,6 +101,9 @@ class OC_Log_Owncloud {
 		} else {
 			// Fall back to error_log
 			error_log($entry);
+		}
+		if (php_sapi_name() === 'cli-server') {
+			error_log($message, 4);
 		}
 	}
 

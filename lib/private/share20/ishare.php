@@ -2,7 +2,7 @@
 /**
  * @author Roeland Jago Douma <rullzer@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -36,10 +36,33 @@ interface IShare {
 	public function getId();
 
 	/**
+	 * Set the id of the share
+	 *
+	 * @param string $id
+	 * @return IShare The modified share object
+	 */
+	public function setId($id);
+
+	/**
+	 * Get the full share id
+	 *
+	 * @return string
+	 */
+	public function getFullId();
+
+	/**
+	 * Set the provider id
+	 *
+	 * @param string $id
+	 * @return IShare The modified share object
+	 */
+	public function setProviderId($id);
+
+	/**
 	 * Set the path of this share
 	 *
 	 * @param Node $path
-	 * @return Share The modified object
+	 * @return IShare The modified object
 	 */
 	public function setPath(Node $path);
 
@@ -54,7 +77,7 @@ interface IShare {
 	 * Set the shareType
 	 *
 	 * @param int $shareType
-	 * @return Share The modified object
+	 * @return IShare The modified object
 	 */
 	public function setShareType($shareType);
 
@@ -69,7 +92,7 @@ interface IShare {
 	 * Set the receiver of this share
 	 *
 	 * @param IUser|IGroup|string
-	 * @return Share The modified object
+	 * @return IShare The modified object
 	 */
 	public function setSharedWith($sharedWith);
 
@@ -84,7 +107,7 @@ interface IShare {
 	 * Set the permissions
 	 *
 	 * @param int $permissions
-	 * @return Share The modified object
+	 * @return IShare The modified object
 	 */
 	public function setPermissions($permissions);
 
@@ -99,9 +122,9 @@ interface IShare {
 	 * Set the expiration date
 	 *
 	 * @param \DateTime $expireDate
-	 * @return Share The modified object
+	 * @return IShare The modified object
 	 */
-	public function setExpirationDate(\DateTime $expireDate);
+	public function setExpirationDate($expireDate);
 
 	/**
 	 * Get the share expiration date
@@ -111,11 +134,28 @@ interface IShare {
 	public function getExpirationDate();
 
 	/**
+	 * Set the sharer of the path
+	 *
+	 * @param IUser|string $sharedBy
+	 * @return IShare The modified object
+	 */
+	public function setSharedBy($sharedBy);
+
+	/**
 	 * Get share sharer
 	 *
 	 * @return IUser|string
 	 */
 	public function getSharedBy();
+
+	/**
+	 * Set the original share owner (who owns the path)
+	 *
+	 * @param IUser|string
+	 *
+	 * @return IShare The modified object
+	 */
+	public function setShareOwner($shareOwner);
 
 	/**
 	 * Get the original share owner (who owns the path)
@@ -129,7 +169,7 @@ interface IShare {
 	 *
 	 * @param string $password
 	 *
-	 * @return Share The modified object
+	 * @return IShare The modified object
 	 */
 	public function setPassword($password);
 
@@ -139,6 +179,14 @@ interface IShare {
 	 * @return string
 	 */
 	public function getPassword();
+
+	/**
+	 * Set the token
+	 *
+	 * @param string $token
+	 * @return IShare The modified object
+	 */
+	public function setToken($token);
 
 	/**
 	 * Get the token
@@ -153,6 +201,14 @@ interface IShare {
 	 * @return int
 	 */
 	public function getParent();
+
+	/**
+	 * Set the target of this share
+	 *
+	 * @param string $target
+	 * @return IShare The modified object
+	 */
+	public function setTarget($target);
 
 	/**
 	 * Get the target of this share

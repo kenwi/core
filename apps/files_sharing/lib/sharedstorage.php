@@ -6,12 +6,12 @@
  * @author Michael Gapczynski <GapczynskiM@gmail.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <icewind@owncloud.com>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Roeland Jago Douma <rullzer@owncloud.com>
  * @author scambra <sergio@entrecables.com>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -32,8 +32,6 @@ namespace OC\Files\Storage;
 
 use OC\Files\Filesystem;
 use OCA\Files_Sharing\ISharedStorage;
-use OCA\Files_Sharing\Propagator;
-use OCA\Files_Sharing\SharedMount;
 use OCP\Lock\ILockingProvider;
 
 /**
@@ -259,7 +257,7 @@ class Shared extends \OC\Files\Storage\Common implements ISharedStorage {
 	}
 
 	public function isSharable($path) {
-		if (\OCP\Util::isSharingDisabledForUser()) {
+		if (\OCP\Util::isSharingDisabledForUser() || !\OC\Share\Share::isResharingAllowed()) {
 			return false;
 		}
 		return ($this->getPermissions($path) & \OCP\Constants::PERMISSION_SHARE);
@@ -700,5 +698,12 @@ class Shared extends \OC\Files\Storage\Common implements ISharedStorage {
 	 */
 	public function setAvailability($available) {
 		// shares do not participate in availability logic
+	}
+
+	public function isLocal() {
+		$this->init();
+		$ownerPath = $this->ownerView->getPath($this->share['item_source']);
+		list($targetStorage) = $this->ownerView->resolvePath($ownerPath);
+		return $targetStorage->isLocal();
 	}
 }

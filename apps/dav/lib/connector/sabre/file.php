@@ -3,17 +3,18 @@
  * @author Bart Visscher <bartv@thisnet.nl>
  * @author Björn Schießle <schiessle@owncloud.com>
  * @author Jakob Sack <mail@jakobsack.de>
+ * @author Joas Schilling <nickvergessen@owncloud.com>
  * @author Jörn Friedrich Dreyer <jfd@butonic.de>
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Owen Winkler <a_github@midnightcircus.com>
  * @author Robin Appelman <icewind@owncloud.com>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Roeland Jago Douma <rullzer@owncloud.com>
+ * @author Scrutinizer Auto-Fixer <auto-fixer@scrutinizer-ci.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
- * @author Thomas Tanghus <thomas@tanghus.net>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -129,8 +130,16 @@ class File extends Node implements IFile {
 				// because we have no clue about the cause we can only throw back a 500/Internal Server Error
 				throw new Exception('Could not write file contents');
 			}
-			list($count,) = \OC_Helper::streamCopy($data, $target);
+			list($count, $result) = \OC_Helper::streamCopy($data, $target);
 			fclose($target);
+
+			if($result === false) {
+				$expected = -1;
+				if (isset($_SERVER['CONTENT_LENGTH'])) {
+					$expected = $_SERVER['CONTENT_LENGTH'];
+				}
+				throw new Exception('Error while copying file to target location (copied bytes: ' . $count . ', expected filesize: '. $expected .' )');
+			}
 
 			// if content length is sent by client:
 			// double check if the file was fully received
@@ -329,7 +338,7 @@ class File extends Node implements IFile {
 		if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'PROPFIND') {
 			return $mimeType;
 		}
-		return \OC_Helper::getSecureMimeType($mimeType);
+		return \OC::$server->getMimeTypeDetector()->getSecureMimeType($mimeType);
 	}
 
 	/**

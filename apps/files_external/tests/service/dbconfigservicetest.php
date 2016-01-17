@@ -2,7 +2,7 @@
 /**
  * @author Robin Appelman <icewind@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -229,5 +229,33 @@ class DBConfigServiceTest extends TestCase {
 		$this->assertCount(1, $mounts);
 		$this->assertEquals($id1, $mounts[0]['mount_id']);
 		$this->assertEquals([['type' => DBConfigService::APPLICABLE_TYPE_GLOBAL, 'value' => null, 'mount_id' => $id1]], $mounts[0]['applicable']);
+	}
+
+	public function testSetMountPoint() {
+		$id1 = $this->addMount('/test', 'foo', 'bar', 100, DBConfigService::MOUNT_TYPE_ADMIN);
+		$id2 = $this->addMount('/foo', 'foo', 'bar', 100, DBConfigService::MOUNT_TYPE_ADMIN);
+
+		$this->dbConfig->setMountPoint($id1, '/asd');
+
+		$mount = $this->dbConfig->getMountById($id1);
+		$this->assertEquals('/asd', $mount['mount_point']);
+
+		// remains unchanged
+		$mount = $this->dbConfig->getMountById($id2);
+		$this->assertEquals('/foo', $mount['mount_point']);
+	}
+
+	public function testSetAuthBackend() {
+		$id1 = $this->addMount('/test', 'foo', 'bar', 100, DBConfigService::MOUNT_TYPE_ADMIN);
+		$id2 = $this->addMount('/foo', 'foo', 'bar', 100, DBConfigService::MOUNT_TYPE_ADMIN);
+
+		$this->dbConfig->setAuthBackend($id1, 'none');
+
+		$mount = $this->dbConfig->getMountById($id1);
+		$this->assertEquals('none', $mount['auth_backend']);
+
+		// remains unchanged
+		$mount = $this->dbConfig->getMountById($id2);
+		$this->assertEquals('bar', $mount['auth_backend']);
 	}
 }

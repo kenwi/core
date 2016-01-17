@@ -6,7 +6,7 @@
  * @author Robin Appelman <icewind@owncloud.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ namespace OC\Files\Storage\Wrapper;
 use OC\Encryption\Exceptions\ModuleDoesNotExistsException;
 use OC\Encryption\Update;
 use OC\Encryption\Util;
+use OC\Files\Cache\CacheEntry;
 use OC\Files\Filesystem;
 use OC\Files\Mount\Manager;
 use OC\Files\Storage\LocalTempFileTrait;
@@ -123,13 +124,14 @@ class Encryption extends Wrapper {
 	public function filesize($path) {
 		$fullPath = $this->getFullPath($path);
 
+		/** @var CacheEntry $info */
 		$info = $this->getCache()->get($path);
 		if (isset($this->unencryptedSize[$fullPath])) {
 			$size = $this->unencryptedSize[$fullPath];
 			// update file cache
 			$info['encrypted'] = true;
 			$info['size'] = $size;
-			$this->getCache()->put($path, $info);
+			$this->getCache()->put($path, $info->getData());
 
 			return $size;
 		}

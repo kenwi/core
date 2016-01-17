@@ -2,12 +2,12 @@
 /**
  * @author Bart Visscher <bartv@thisnet.nl>
  * @author Björn Schießle <schiessle@owncloud.com>
+ * @author Clark Tomlinson <fallen013@gmail.com>
  * @author Guillaume AMAT <guillaume.amat@informatique-libre.com>
  * @author Hasso Tepper <hasso@zone.ee>
  * @author Joas Schilling <nickvergessen@owncloud.com>
  * @author Jörn Friedrich Dreyer <jfd@butonic.de>
  * @author Lukas Reschke <lukas@owncloud.com>
- * @author Matthias Rieber <matthias@zu-con.org>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Owen Winkler <a_github@midnightcircus.com>
  * @author Robin Appelman <icewind@owncloud.com>
@@ -15,7 +15,7 @@
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -138,9 +138,10 @@ $array = array(
 		array(
 			'session_lifetime'	=> min(\OCP\Config::getSystemValue('session_lifetime', OC::$server->getIniWrapper()->getNumeric('session.gc_maxlifetime')), OC::$server->getIniWrapper()->getNumeric('session.gc_maxlifetime')),
 			'session_keepalive'	=> \OCP\Config::getSystemValue('session_keepalive', true),
-			'version'			=> implode('.', OC_Util::getVersion()),
+			'version'			=> implode('.', \OCP\Util::getVersion()),
 			'versionstring'		=> OC_Util::getVersionString(),
 			'enable_avatars'	=> \OC::$server->getConfig()->getSystemValue('enable_avatars', true),
+			'lost_password_link'=> \OC::$server->getConfig()->getSystemValue('lost_password_link', null),
 			'modRewriteWorking'	=> (getenv('front_controller_active') === 'true'),
 		)
 	),
@@ -165,6 +166,7 @@ $array = array(
 			'baseUrl' => $defaults->getBaseUrl(),
 			'syncClientUrl' => $defaults->getSyncClientUrl(),
 			'docBaseUrl' => $defaults->getDocBaseUrl(),
+			'docPlaceholderUrl' => $defaults->buildDocLinkToKey('PLACEHOLDER'),
 			'slogan' => $defaults->getSlogan(),
 			'logoClaim' => $defaults->getLogoClaim(),
 			'shortFooter' => $defaults->getShortFooter(),

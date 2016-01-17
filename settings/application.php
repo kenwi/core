@@ -5,9 +5,10 @@
  * @author Joas Schilling <nickvergessen@owncloud.com>
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Roeland Jago Douma <rullzer@owncloud.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -107,6 +108,7 @@ class Application extends App {
 				$c->query('AppName'),
 				$c->query('Request'),
 				$c->query('CertificateManager'),
+				$c->query('SystemCertificateManager'),
 				$c->query('L10N'),
 				$c->query('IAppManager')
 			);
@@ -242,6 +244,9 @@ class Application extends App {
 		});
 		$container->registerService('CertificateManager', function(IContainer $c){
 			return $c->query('ServerContainer')->getCertificateManager();
+		});
+		$container->registerService('SystemCertificateManager', function (IContainer $c) {
+			return $c->query('ServerContainer')->getCertificateManager(null);
 		});
 		$container->registerService('Checker', function(IContainer $c) {
 			/** @var Server $server */

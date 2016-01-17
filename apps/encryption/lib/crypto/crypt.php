@@ -4,9 +4,10 @@
  * @author Clark Tomlinson <fallen013@gmail.com>
  * @author Joas Schilling <nickvergessen@owncloud.com>
  * @author Lukas Reschke <lukas@owncloud.com>
+ * @author Scrutinizer Auto-Fixer <auto-fixer@scrutinizer-ci.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -30,7 +31,6 @@ use OC\Encryption\Exceptions\DecryptionFailedException;
 use OC\Encryption\Exceptions\EncryptionFailedException;
 use OCA\Encryption\Exceptions\MultiKeyDecryptException;
 use OCA\Encryption\Exceptions\MultiKeyEncryptException;
-use OCA\Encryption\Vendor\PBKDF2Fallback;
 use OCP\Encryption\Exceptions\GenericEncryptionException;
 use OCP\IConfig;
 use OCP\ILogger;
@@ -293,28 +293,14 @@ class Crypt {
 		$salt = hash('sha256', $uid . $instanceId . $instanceSecret, true);
 		$keySize = $this->getKeySize($cipher);
 
-		if (function_exists('hash_pbkdf2')) {
-			$hash = hash_pbkdf2(
-				'sha256',
-				$password,
-				$salt,
-				100000,
-				$keySize,
-				true
-			);
-		} else {
-			// fallback to 3rdparty lib for PHP <= 5.4.
-			// FIXME: Can be removed as soon as support for PHP 5.4 was dropped
-			$fallback = new PBKDF2Fallback();
-			$hash = $fallback->pbkdf2(
-				'sha256',
-				$password,
-				$salt,
-				100000,
-				$keySize,
-				true
-			);
-		}
+		$hash = hash_pbkdf2(
+			'sha256',
+			$password,
+			$salt,
+			100000,
+			$keySize,
+			true
+		);
 
 		return $hash;
 	}

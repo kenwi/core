@@ -1,8 +1,10 @@
 <?php
 /**
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin Appelman <icewind@owncloud.com>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
+ * @author Scrutinizer Auto-Fixer <auto-fixer@scrutinizer-ci.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -89,6 +91,9 @@ class UserGlobalStoragesService extends GlobalStoragesService {
 		throw new \DomainException('UserGlobalStoragesService writing disallowed');
 	}
 
+	/**
+	 * @param integer $id
+	 */
 	public function removeStorage($id) {
 		throw new \DomainException('UserGlobalStoragesService writing disallowed');
 	}
@@ -149,4 +154,22 @@ class UserGlobalStoragesService extends GlobalStoragesService {
 		return 0;
 	}
 
+	protected function isApplicable(StorageConfig $config) {
+		$applicableUsers = $config->getApplicableUsers();
+		$applicableGroups = $config->getApplicableGroups();
+
+		if (count($applicableUsers) === 0 && count($applicableGroups) === 0) {
+			return true;
+		}
+		if (in_array($this->getUser()->getUID(), $applicableUsers, true)) {
+			return true;
+		}
+		$groupIds = $this->groupManager->getUserGroupIds($this->getUser());
+		foreach ($groupIds as $groupId) {
+			if (in_array($groupId, $applicableGroups, true)) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

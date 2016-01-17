@@ -1,8 +1,9 @@
 <?php
 /**
  * @author Björn Schießle <schiessle@owncloud.com>
+ * @author Roeland Jago Douma <rullzer@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -90,7 +91,7 @@ class TrustedServers {
 		$url = $this->updateProtocol($url);
 		$result = $this->dbHandler->addServer($url);
 		if ($result) {
-			$token = $this->secureRandom->getMediumStrengthGenerator()->generate(16);
+			$token = $this->secureRandom->generate(16);
 			$this->dbHandler->addToken($url, $token);
 			$this->jobList->add(
 				'OCA\Federation\BackgroundJob\RequestSharedSecret',

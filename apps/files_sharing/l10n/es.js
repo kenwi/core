@@ -3,6 +3,7 @@ OC.L10N.register(
     {
     "Server to server sharing is not enabled on this server" : "Compartir entre servidores no está habilitado en este servidor",
     "The mountpoint name contains invalid characters." : "El punto de montaje contiene caracteres inválidos.",
+    "Not allowed to create a federated share with the same user server" : "No se permite crear un recurso compartido federado con el mismo servidor de usuario",
     "Invalid or untrusted SSL certificate" : "Certificado SSL inválido o no confiable",
     "Could not authenticate to remote share, password might be wrong" : "No se ha podido autenticar para compartir remotamente, quizás esté mal la contraseña",
     "Storage not valid" : "Almacenamiento inválido",
@@ -52,6 +53,7 @@ OC.L10N.register(
     "Shared by %2$s" : "Compartido por %2$s",
     "Shared via public link" : "Compartido vía enlace público",
     "Shares" : "Compartidos",
+    "You received %2$s as a remote share from %1$s" : "Ha recibido %2$s como un recurso compartido de %1$s",
     "Accept" : "Aceptar",
     "Decline" : "Denegar",
     "Share with me through my #ownCloud Federated Cloud ID, see %s" : "Compartirlo conmigo a través de mi ID Nube Federada #ownCloud, ver %s",

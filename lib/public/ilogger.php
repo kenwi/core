@@ -3,7 +3,7 @@
  * @author Bernhard Posselt <dev@bernhard-posselt.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -125,6 +125,14 @@ interface ILogger {
 
 	/**
 	 * Logs an exception very detailed
+	 * An additional message can we written to the log by adding it to the
+	 * context.
+	 *
+	 * <code>
+	 * $logger->logException($ex, [
+	 *     'message' => 'Exception during cron job execution'
+	 * ]);
+	 * </code>
 	 *
 	 * @param \Exception $exception
 	 * @param array $context

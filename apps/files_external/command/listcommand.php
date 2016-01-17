@@ -2,7 +2,7 @@
 /**
  * @author Robin Appelman <icewind@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -29,7 +29,6 @@ use OCP\IUserManager;
 use OCP\IUserSession;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
-use Symfony\Component\Console\Helper\TableHelper;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -103,6 +102,16 @@ class ListCommand extends Base {
 		/** @var  $mounts StorageConfig[] */
 		$mounts = $storageService->getAllStorages();
 
+		$this->listMounts($userId, $mounts, $input, $output);
+	}
+
+	/**
+	 * @param $userId $userId
+	 * @param StorageConfig[] $mounts
+	 * @param InputInterface $input
+	 * @param OutputInterface $output
+	 */
+	public function listMounts($userId, array $mounts, InputInterface $input, OutputInterface $output){
 		if (count($mounts) === 0) {
 			if ($userId) {
 				$output->writeln("<info>No mounts configured by $userId</info>");

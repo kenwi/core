@@ -2,7 +2,7 @@
 /**
  * @author Lukas Reschke <lukas@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -79,6 +79,34 @@ class Checker {
 		$this->config = $config;
 		$this->cache = $cacheFactory->create(self::CACHE_KEY);
 		$this->appManager = $appManager;
+	}
+
+	/**
+	 * Whether code signing is enforced or not.
+	 *
+	 * @return bool
+	 */
+	public function isCodeCheckEnforced() {
+		// FIXME: Once the signing server is instructed to sign daily, beta and
+		// RCs as well these need to be included also.
+		$signedChannels = [
+			'stable',
+		];
+		if(!in_array($this->environmentHelper->getChannel(), $signedChannels, true)) {
+			return false;
+		}
+
+		/**
+		 * This config option is undocumented and supposed to be so, it's only
+		 * applicable for very specific scenarios and we should not advertise it
+		 * too prominent. So please do not add it to config.sample.php.
+		 */
+		$isIntegrityCheckDisabled = $this->config->getSystemValue('integrity.check.disabled', false);
+		if($isIntegrityCheckDisabled === true) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -209,6 +237,10 @@ class Checker {
 	 * @throws \Exception
 	 */
 	private function verify($signaturePath, $basePath, $certificateCN) {
+		if(!$this->isCodeCheckEnforced()) {
+			return [];
+		}
+
 		$signatureData = json_decode($this->fileAccessHelper->file_get_contents($signaturePath), true);
 		if(!is_array($signatureData)) {
 			throw new InvalidSignatureException('Signature data not found.');
@@ -320,6 +352,14 @@ class Checker {
 		$this->cache->set(self::CACHE_KEY, json_encode($resultArray));
 	}
 
+	/**
+	 *
+	 * Clean previous results for a proper rescanning. Otherwise
+	 */
+	private function cleanResults() {
+		$this->config->deleteAppValue('core', self::CACHE_KEY);
+		$this->cache->remove(self::CACHE_KEY);
+	}
 
 	/**
 	 * Verify the signature of $appId. Returns an array with the following content:
@@ -350,11 +390,14 @@ class Checker {
 	 * Array may be empty in case no problems have been found.
 	 *
 	 * @param string $appId
+	 * @param string $path Optional path. If none is given it will be guessed.
 	 * @return array
 	 */
-	public function verifyAppSignature($appId) {
+	public function verifyAppSignature($appId, $path = '') {
 		try {
-			$path = $this->appLocator->getAppPath($appId);
+			if($path === '') {
+				$path = $this->appLocator->getAppPath($appId);
+			}
 			$result = $this->verify(
 					$path . '/appinfo/signature.json',
 					$path,
@@ -428,6 +471,7 @@ class Checker {
 	 * and store the results.
 	 */
 	public function runInstanceVerification() {
+		$this->cleanResults();
 		$this->verifyCoreSignature();
 		$appIds = $this->appLocator->getAllApps();
 		foreach($appIds as $appId) {

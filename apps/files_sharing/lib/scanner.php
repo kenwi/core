@@ -3,7 +3,7 @@
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -35,7 +35,7 @@ class SharedScanner extends Scanner {
 	 *
 	 * @return array an array of metadata of the file
 	 */
-	public function getData($path){
+	protected function getData($path){
 		$data = parent::getData($path);
 		$sourcePath = $this->storage->getSourcePath($path);
 		list($sourceStorage, $internalPath) = \OC\Files\Filesystem::resolvePath($sourcePath);

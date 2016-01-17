@@ -7,7 +7,7 @@
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Thomas Tanghus <thomas@tanghus.net>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -27,7 +27,6 @@
 
 namespace OC\AppFramework\Middleware\Security;
 
-use OC\AppFramework\Http;
 use OC\Appframework\Middleware\Security\Exceptions\AppNotEnabledException;
 use OC\Appframework\Middleware\Security\Exceptions\CrossSiteRequestForgeryException;
 use OC\Appframework\Middleware\Security\Exceptions\NotAdminException;

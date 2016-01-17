@@ -26,6 +26,7 @@ body {
 #body-login {
 	text-align: center;
 	background: #1d2d44; /* Old browsers */
+	background: -moz-linear-gradient(top, #35537a 0%, #1d2d44 100%); /* FF3.6+ */
 	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#35537a), color-stop(100%,#1d2d44)); /* Chrome,Safari4+ */
 	background: -webkit-linear-gradient(top, #35537a 0%,#1d2d44 100%); /* Chrome10+,Safari5.1+ */
 	background: linear-gradient(top, #35537a 0%,#1d2d44 100%); /* W3C */
@@ -254,6 +255,10 @@ body {
 	width: 22em;
 	margin: 0 auto;
 	padding-top: 20px;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 #body-login p.info a {
 	font-weight: 600;
@@ -291,6 +296,10 @@ body {
 #body-login form fieldset {
 	margin-bottom: 20px;
 	text-align: left;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 #body-login form #sqliteInformation {
 	margin-top: -20px;
@@ -348,6 +357,10 @@ body {
 .groupmiddle,
 .groupbottom {
 	position: relative;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 #body-login .grouptop input,
 .grouptop input {
@@ -373,6 +386,9 @@ body {
 	border-top-left-radius: 0;
 	box-shadow: 0 1px 0 rgba(0,0,0,.1) inset !important;
 }
+#body-login .groupbottom input[type=submit] {
+	box-shadow: none !important;
+}
 
 /* keep the labels for screen readers but hide them since we use placeholders */
 label.infield {
@@ -385,6 +401,10 @@ label.infield {
 	padding: 14px;
 	padding-left: 28px;
 	vertical-align: middle;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 html.ie8 #body-login form input[type="checkbox"]+label {
 	margin-left: -28px;
@@ -689,9 +709,9 @@ code { font-family:"Lucida Console", "Lucida Sans Typewriter", "DejaVu Sans Mono
 
 #quota {
 	cursor: default;
-	margin: 30px;
+	margin: 30px !important;
 	position: relative;
-	padding: 0;
+	padding: 0 !important;
 }
 #quota div {
 	padding: 0;

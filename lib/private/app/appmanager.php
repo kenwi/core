@@ -4,9 +4,10 @@
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <icewind@owncloud.com>
+ * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -33,6 +34,18 @@ use OCP\IUser;
 use OCP\IUserSession;
 
 class AppManager implements IAppManager {
+
+	/**
+	 * Apps with these types can not be enabled for certain groups only
+	 * @var string[]
+	 */
+	protected $protectedAppTypes = [
+		'filesystem',
+		'prelogin',
+		'authentication',
+		'logging',
+		'prevent_group_restriction',
+	];
 
 	/** @var \OCP\IUserSession */
 	private $userSession;
@@ -147,7 +160,18 @@ class AppManager implements IAppManager {
 		} elseif (is_null($user)) {
 			return false;
 		} else {
+			if(empty($enabled)){
+				return false;
+			}
+
 			$groupIds = json_decode($enabled);
+
+			if (!is_array($groupIds)) {
+				$jsonError = json_last_error();
+				\OC::$server->getLogger()->warning('AppManger::checkAppForUser - can\'t decode group IDs: ' . print_r($enabled, true) . ' - json error code: ' . $jsonError, ['app' => 'lib']);
+				return false;
+			}
+
 			$userGroups = $this->groupManager->getUserGroupIds($user);
 			foreach ($userGroups as $groupId) {
 				if (array_search($groupId, $groupIds) !== false) {
@@ -185,8 +209,17 @@ class AppManager implements IAppManager {
 	 *
 	 * @param string $appId
 	 * @param \OCP\IGroup[] $groups
+	 * @throws \Exception if app can't be enabled for groups
 	 */
 	public function enableAppForGroups($appId, $groups) {
+		$info = $this->getAppInfo($appId);
+		if (!empty($info['types'])) {
+			$protectedTypes = array_intersect($this->protectedAppTypes, $info['types']);
+			if (!empty($protectedTypes)) {
+				throw new \Exception("$appId can't be enabled for groups.");
+			}
+		}
+
 		$groupIds = array_map(function ($group) {
 			/** @var \OCP\IGroup $group */
 			return $group->getGID();

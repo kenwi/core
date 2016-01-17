@@ -15,15 +15,14 @@
  * @author Michael Gapczynski <GapczynskiM@gmail.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <icewind@owncloud.com>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Roeland Jago Douma <rullzer@owncloud.com>
- * @author Roman Geber <rgeber@owncloudapps.com>
  * @author Sam Tuke <mail@samtuke.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Thomas Tanghus <thomas@tanghus.net>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -44,15 +43,16 @@
 namespace OC\Files;
 
 use Icewind\Streams\CallbackWrapper;
-use OC\Files\Cache\Updater;
 use OC\Files\Mount\MoveableMount;
 use OC\Files\Storage\Storage;
 use OC\User\User;
+use OCP\Files\Cache\ICacheEntry;
 use OCP\Files\FileNameTooLongException;
 use OCP\Files\InvalidCharacterInPathException;
 use OCP\Files\InvalidPathException;
 use OCP\Files\NotFoundException;
 use OCP\Files\ReservedWordException;
+use OCP\Files\Storage\ILockingStorage;
 use OCP\IUser;
 use OCP\Lock\ILockingProvider;
 use OCP\Lock\LockedException;
@@ -86,6 +86,8 @@ class View {
 
 	private $updaterEnabled = true;
 
+	private $userManager;
+
 	/**
 	 * @param string $root
 	 * @throws \Exception If $root contains an invalid path
@@ -101,6 +103,7 @@ class View {
 		$this->fakeRoot = $root;
 		$this->lockingProvider = \OC::$server->getLockingProvider();
 		$this->lockingEnabled = !($this->lockingProvider instanceof \OC\Lock\NoopLockingProvider);
+		$this->userManager = \OC::$server->getUserManager();
 	}
 
 	public function getAbsolutePath($path = '/') {
@@ -912,7 +915,7 @@ class View {
 			$source = $this->fopen($path, 'r');
 			if ($source) {
 				$extension = pathinfo($path, PATHINFO_EXTENSION);
-				$tmpFile = \OC_Helper::tmpFile($extension);
+				$tmpFile = \OC::$server->getTempManager()->getTemporaryFile($extension);
 				file_put_contents($tmpFile, $source);
 				return $tmpFile;
 			} else {
@@ -1196,7 +1199,7 @@ class View {
 	 * @return \OC\User\User
 	 */
 	private function getUserObjectForOwner($ownerId) {
-		$owner = \OC::$server->getUserManager()->get($ownerId);
+		$owner = $this->userManager->get($ownerId);
 		if ($owner instanceof IUser) {
 			return $owner;
 		} else {
@@ -1253,7 +1256,7 @@ class View {
 	 * @param boolean|string $includeMountPoints true to add mountpoint sizes,
 	 * 'ext' to add only ext storage mount point sizes. Defaults to true.
 	 * defaults to true
-	 * @return \OC\Files\FileInfo|bool False if file does not exist
+	 * @return \OC\Files\FileInfo|false False if file does not exist
 	 */
 	public function getFileInfo($path, $includeMountPoints = true) {
 		$this->assertPathLength($path);
@@ -1272,7 +1275,7 @@ class View {
 		if ($storage) {
 			$data = $this->getCacheEntry($storage, $internalPath, $relativePath);
 
-			if (!is_array($data)) {
+			if (!$data instanceof ICacheEntry) {
 				return false;
 			}
 
@@ -1332,18 +1335,19 @@ class View {
 
 			$data = $this->getCacheEntry($storage, $internalPath, $directory);
 
-			if (!is_array($data) || !isset($data['fileid'])) {
+			if (!$data instanceof ICacheEntry || !isset($data['fileid'])) {
 				return [];
 			}
 
 			$folderId = $data['fileid'];
 			$contents = $cache->getFolderContentsById($folderId); //TODO: mimetype_filter
 
+			$sharingDisabled = \OCP\Util::isSharingDisabledForUser();
 			/**
 			 * @var \OC\Files\FileInfo[] $files
 			 */
-			$files = array_map(function (array $content) use ($path, $storage, $mount) {
-				if (\OCP\Util::isSharingDisabledForUser()) {
+			$files = array_map(function (ICacheEntry $content) use ($path, $storage, $mount, $sharingDisabled) {
+				if ($sharingDisabled) {
 					$content['permissions'] = $content['permissions'] & ~\OCP\Constants::PERMISSION_SHARE;
 				}
 				$owner = $this->getUserObjectForOwner($storage->getOwner($content['path']));
@@ -1569,10 +1573,15 @@ class View {
 	 * Get the owner for a file or folder
 	 *
 	 * @param string $path
-	 * @return string
+	 * @return string the user id of the owner
+	 * @throws NotFoundException
 	 */
 	public function getOwner($path) {
-		return $this->basicOperation('getOwner', $path);
+		$info = $this->getFileInfo($path);
+		if (!$info) {
+			throw new NotFoundException($path . ' not found while trying to get owner');
+		}
+		return $info->getOwner()->getUID();
 	}
 
 	/**
@@ -1831,11 +1840,14 @@ class View {
 		$mount = $this->getMountForLock($absolutePath, $lockMountPoint);
 		if ($mount) {
 			try {
-				$mount->getStorage()->acquireLock(
-					$mount->getInternalPath($absolutePath),
-					$type,
-					$this->lockingProvider
-				);
+				$storage = $mount->getStorage();
+				if ($storage->instanceOfStorage('\OCP\Files\Storage\ILockingStorage')) {
+					$storage->acquireLock(
+						$mount->getInternalPath($absolutePath),
+						$type,
+						$this->lockingProvider
+					);
+				}
 			} catch (\OCP\Lock\LockedException $e) {
 				// rethrow with the a human-readable path
 				throw new \OCP\Lock\LockedException(
@@ -1869,11 +1881,14 @@ class View {
 		$mount = $this->getMountForLock($absolutePath, $lockMountPoint);
 		if ($mount) {
 			try {
-				$mount->getStorage()->changeLock(
-					$mount->getInternalPath($absolutePath),
-					$type,
-					$this->lockingProvider
-				);
+				$storage = $mount->getStorage();
+				if ($storage->instanceOfStorage('\OCP\Files\Storage\ILockingStorage')) {
+					$storage->changeLock(
+						$mount->getInternalPath($absolutePath),
+						$type,
+						$this->lockingProvider
+					);
+				}
 			} catch (\OCP\Lock\LockedException $e) {
 				// rethrow with the a human-readable path
 				throw new \OCP\Lock\LockedException(
@@ -1904,11 +1919,14 @@ class View {
 
 		$mount = $this->getMountForLock($absolutePath, $lockMountPoint);
 		if ($mount) {
-			$mount->getStorage()->releaseLock(
-				$mount->getInternalPath($absolutePath),
-				$type,
-				$this->lockingProvider
-			);
+			$storage = $mount->getStorage();
+			if ($storage->instanceOfStorage('\OCP\Files\Storage\ILockingStorage')) {
+				$storage->releaseLock(
+					$mount->getInternalPath($absolutePath),
+					$type,
+					$this->lockingProvider
+				);
+			}
 		}
 
 		return true;
@@ -2007,5 +2025,29 @@ class View {
 			return $parts[2];
 		}
 		return '';
+	}
+
+	/**
+	 * @param string $filename
+	 * @return array
+	 * @throws \OC\User\NoUserException
+	 * @throws NotFoundException
+	 */
+	public function getUidAndFilename($filename) {
+		$info = $this->getFileInfo($filename);
+		if (!$info instanceof \OCP\Files\FileInfo) {
+			throw new NotFoundException($this->getAbsolutePath($filename) . ' not found');
+		}
+		$uid = $info->getOwner()->getUID();
+		if ($uid != \OCP\User::getUser()) {
+			Filesystem::initMountPoints($uid);
+			$ownerView = new View('/' . $uid . '/files');
+			try {
+				$filename = $ownerView->getPath($info['fileid']);
+			} catch (NotFoundException $e) {
+				throw new NotFoundException('File with id ' . $info['fileid'] . ' not found for user ' . $uid);
+			}
+		}
+		return [$uid, $filename];
 	}
 }

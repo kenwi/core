@@ -1,17 +1,16 @@
 <?php
 /**
  * @author Bart Visscher <bartv@thisnet.nl>
- * @author Felix Moeller <mail@felixmoeller.de>
  * @author Jakob Sack <mail@jakobsack.de>
  * @author Jörn Friedrich Dreyer <jfd@butonic.de>
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
- * @author Sebastian Döll <sebastian.doell@libasys.de>
+ * @author Scrutinizer Auto-Fixer <auto-fixer@scrutinizer-ci.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Thomas Tanghus <thomas@tanghus.net>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -33,22 +32,20 @@ namespace OCA\DAV\Connector\Sabre;
 use OCP\IUser;
 use OCP\IUserManager;
 use OCP\IConfig;
+use Sabre\DAV\Exception;
 use \Sabre\DAV\PropPatch;
+use Sabre\DAVACL\PrincipalBackend\BackendInterface;
 use Sabre\HTTP\URLUtil;
 
-class Principal implements \Sabre\DAVACL\PrincipalBackend\BackendInterface {
-	/** @var IConfig */
-	private $config;
+class Principal implements BackendInterface {
+
 	/** @var IUserManager */
 	private $userManager;
 
 	/**
-	 * @param IConfig $config
 	 * @param IUserManager $userManager
 	 */
-	public function __construct(IConfig $config,
-								IUserManager $userManager) {
-		$this->config = $config;
+	public function __construct(IUserManager $userManager) {
 		$this->userManager = $userManager;
 	}
 
@@ -108,13 +105,13 @@ class Principal implements \Sabre\DAVACL\PrincipalBackend\BackendInterface {
 	 *
 	 * @param string $principal
 	 * @return string[]
-	 * @throws \Sabre\DAV\Exception
+	 * @throws Exception
 	 */
 	public function getGroupMemberSet($principal) {
 		// TODO: for now the group principal has only one member, the user itself
 		$principal = $this->getPrincipalByPath($principal);
 		if (!$principal) {
-			throw new \Sabre\DAV\Exception('Principal not found');
+			throw new Exception('Principal not found');
 		}
 
 		return [$principal['uri']];
@@ -125,7 +122,7 @@ class Principal implements \Sabre\DAVACL\PrincipalBackend\BackendInterface {
 	 *
 	 * @param string $principal
 	 * @return array
-	 * @throws \Sabre\DAV\Exception
+	 * @throws Exception
 	 */
 	public function getGroupMembership($principal) {
 		list($prefix, $name) = URLUtil::splitPath($principal);
@@ -134,7 +131,7 @@ class Principal implements \Sabre\DAVACL\PrincipalBackend\BackendInterface {
 		if ($prefix === 'principals/users') {
 			$principal = $this->getPrincipalByPath($principal);
 			if (!$principal) {
-				throw new \Sabre\DAV\Exception('Principal not found');
+				throw new Exception('Principal not found');
 			}
 
 			// TODO: for now the user principal has only its own groups
@@ -157,10 +154,10 @@ class Principal implements \Sabre\DAVACL\PrincipalBackend\BackendInterface {
 	 *
 	 * @param string $principal
 	 * @param string[] $members
-	 * @throws \Sabre\DAV\Exception
+	 * @throws Exception
 	 */
 	public function setGroupMemberSet($principal, array $members) {
-		throw new \Sabre\DAV\Exception('Setting members of the group is not supported yet');
+		throw new Exception('Setting members of the group is not supported yet');
 	}
 
 	/**

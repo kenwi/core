@@ -6,7 +6,7 @@
  * @author Robin Appelman <icewind@owncloud.com>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -24,6 +24,7 @@
  */
 
 namespace OC\Files\Cache;
+use OCP\Files\Cache\ICacheEntry;
 
 /**
  * check the storage backends for updates and change the cache accordingly
@@ -38,7 +39,7 @@ class Shared_Watcher extends Watcher {
 	 * Update the cache for changes to $path
 	 *
 	 * @param string $path
-	 * @param array $cachedData
+	 * @param ICacheEntry $cachedData
 	 */
 	public function update($path, $cachedData) {
 		parent::update($path, $cachedData);

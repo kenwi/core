@@ -17,7 +17,7 @@
  * @author Vincent Petry <pvince81@owncloud.com>
  * @author Volkan Gezer <volkangezer@gmail.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -43,6 +43,7 @@ $urlGenerator = \OC::$server->getURLGenerator();
 
 // Highlight navigation entry
 OC_Util::addScript( 'settings', 'personal' );
+OC_Util::addScript('settings', 'certificates');
 OC_Util::addStyle( 'settings', 'settings' );
 \OC_Util::addVendorScript('strengthify/jquery.strengthify');
 \OC_Util::addVendorStyle('strengthify/strengthify');
@@ -163,10 +164,21 @@ $tmpl->assign('groups', $groups2);
 // add hardcoded forms from the template
 $l = \OC::$server->getL10N('settings');
 $formsAndMore = [];
+$formsAndMore[]= ['anchor' => 'avatar', 'section-name' => $l->t('Personal info')];
 $formsAndMore[]= ['anchor' => 'clientsbox', 'section-name' => $l->t('Sync clients')];
-$formsAndMore[]= ['anchor' => 'passwordform', 'section-name' => $l->t('Personal info')];
 
 $forms=OC_App::getForms('personal');
+
+
+// add bottom hardcoded forms from the template
+if ($enableCertImport) {
+	$certificatesTemplate = new OC_Template('settings', 'certificates');
+	$certificatesTemplate->assign('type', 'personal');
+	$certificatesTemplate->assign('uploadRoute', 'settings.Certificate.addPersonalRootCertificate');
+	$certificatesTemplate->assign('certs', $certificateManager->listCertificates());
+	$certificatesTemplate->assign('urlGenerator', $urlGenerator);
+	$forms[] = $certificatesTemplate->fetchPage();
+}
 
 $formsMap = array_map(function($form){
 	if (preg_match('%(<h2(?P<class>[^>]*)>.*?</h2>)%i', $form, $regs)) {
@@ -176,7 +188,7 @@ $formsMap = array_map(function($form){
 		$anchor = str_replace(' ', '-', $anchor);
 
 		return array(
-			'anchor' => 'goto-' . $anchor,
+			'anchor' => $anchor,
 			'section-name' => $sectionName,
 			'form' => $form
 		);
@@ -187,13 +199,6 @@ $formsMap = array_map(function($form){
 }, $forms);
 
 $formsAndMore = array_merge($formsAndMore, $formsMap);
-
-// add bottom hardcoded forms from the template
-if($enableCertImport) {
-	$formsAndMore[]= array( 'anchor' => 'ssl-root-certificates', 'section-name' => $l->t('SSL root certificates') );
-}
-
-
 
 $tmpl->assign('forms', $formsAndMore);
 $tmpl->printPage();

@@ -7,10 +7,10 @@
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <icewind@owncloud.com>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -35,6 +35,7 @@ use OCP\IImage;
 use OCP\IURLGenerator;
 use OCP\IUser;
 use OCP\IConfig;
+use OCP\UserInterface;
 
 class User implements IUser {
 	/** @var string $uid */
@@ -43,7 +44,7 @@ class User implements IUser {
 	/** @var string $displayName */
 	private $displayName;
 
-	/** @var \OC_User_Interface $backend */
+	/** @var UserInterface $backend */
 	private $backend;
 
 	/** @var bool $enabled */
@@ -69,7 +70,7 @@ class User implements IUser {
 
 	/**
 	 * @param string $uid
-	 * @param \OC_User_Interface $backend
+	 * @param UserInterface $backend
 	 * @param \OC\Hooks\Emitter $emitter
 	 * @param IConfig|null $config
 	 * @param IURLGenerator $urlGenerator
@@ -189,6 +190,8 @@ class User implements IUser {
 
 			// Delete the users entry in the storage table
 			\OC\Files\Cache\Storage::remove('home::' . $this->uid);
+
+			\OC::$server->getCommentsManager()->deleteReferencesOfActor('user', $this->uid);
 		}
 
 		if ($this->emitter) {

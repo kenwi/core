@@ -11,12 +11,12 @@
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <icewind@owncloud.com>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Roeland Jago Douma <rullzer@owncloud.com>
  * @author Stephan Peijnik <speijnik@anexia-it.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -37,7 +37,7 @@ OC_Util::checkSubAdminUser();
 
 \OC::$server->getNavigationManager()->setActiveEntry('core_users');
 
-$userManager = \OC_User::getManager();
+$userManager = \OC::$server->getUserManager();
 $groupManager = \OC_Group::getManager();
 
 // Set the sort option: SORT_USERCOUNT or SORT_GROUPNAME
@@ -102,6 +102,8 @@ $quotaPreset=array_diff($quotaPreset, array('default', 'none'));
 $defaultQuota=$config->getAppValue('files', 'default_quota', 'none');
 $defaultQuotaIsUserDefined=array_search($defaultQuota, $quotaPreset)===false
 	&& array_search($defaultQuota, array('none', 'default'))===false;
+
+\OC::$server->getEventDispatcher()->dispatch('OC\Settings\Users::loadAdditionalScripts');
 
 $tmpl = new OC_Template("settings", "users/main", "user");
 $tmpl->assign('groups', $groups);

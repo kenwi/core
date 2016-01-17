@@ -1,8 +1,9 @@
 <?php
 /**
+ * @author Joas Schilling <nickvergessen@owncloud.com>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -171,6 +172,10 @@ class SystemTagObjectMapper implements ISystemTagObjectMapper {
 	public function haveTag($objIds, $objectType, $tagId, $all = true) {
 		$this->assertTagsExist([$tagId]);
 
+		if (!is_array($objIds)) {
+			$objIds = [$objIds];
+		}
+
 		$query = $this->connection->getQueryBuilder();
 
 		if (!$all) {
@@ -209,7 +214,7 @@ class SystemTagObjectMapper implements ISystemTagObjectMapper {
 	 * @throws \OCP\SystemTag\TagNotFoundException if at least one tag did not exist
 	 */
 	private function assertTagsExist($tagIds) {
-		$tags = $this->tagManager->getTagsById($tagIds);
+		$tags = $this->tagManager->getTagsByIds($tagIds);
 		if (count($tags) !== count($tagIds)) {
 			// at least one tag missing, bail out
 			$foundTagIds = array_map(

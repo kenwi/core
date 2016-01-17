@@ -2,9 +2,11 @@
 /**
  * @author Björn Schießle <schiessle@owncloud.com>
  * @author Clark Tomlinson <fallen013@gmail.com>
+ * @author Lukas Reschke <lukas@owncloud.com>
+ * @author Scrutinizer Auto-Fixer <auto-fixer@scrutinizer-ci.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -213,7 +215,7 @@ class KeyManager {
 	}
 
 	/**
-	 * @param $password
+	 * @param string $password
 	 * @return bool
 	 */
 	public function checkRecoveryPassword($password) {
@@ -386,16 +388,17 @@ class KeyManager {
 	public function getFileKey($path, $uid) {
 		$encryptedFileKey = $this->keyStorage->getFileKey($path, $this->fileKeyId, Encryption::ID);
 
-		if ($this->util->isMasterKeyEnabled()) {
-			$uid = $this->getMasterKeyId();
-		}
-
 		if (is_null($uid)) {
 			$uid = $this->getPublicShareKeyId();
 			$shareKey = $this->getShareKey($path, $uid);
 			$privateKey = $this->keyStorage->getSystemUserKey($this->publicShareKeyId . '.privateKey', Encryption::ID);
 			$privateKey = $this->crypt->decryptPrivateKey($privateKey);
 		} else {
+
+			if ($this->util->isMasterKeyEnabled()) {
+				$uid = $this->getMasterKeyId();
+			}
+
 			$shareKey = $this->getShareKey($path, $uid);
 			$privateKey = $this->session->getPrivateKey();
 		}

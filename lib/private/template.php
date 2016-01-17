@@ -4,19 +4,20 @@
  * @author Bart Visscher <bartv@thisnet.nl>
  * @author Björn Schießle <schiessle@owncloud.com>
  * @author Brice Maron <brice@bmaron.net>
- * @author drarko <drarko@users.noreply.github.com>
  * @author Frank Karlitschek <frank@owncloud.org>
+ * @author Hendrik Leppelsack <hendrik@leppelsack.de>
  * @author Individual IT Services <info@individual-it.net>
  * @author Jakob Sack <mail@jakobsack.de>
  * @author Joas Schilling <nickvergessen@owncloud.com>
  * @author Jörn Friedrich Dreyer <jfd@butonic.de>
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
+ * @author Raghu Nayyar <hey@raghunayyar.com>
  * @author Robin Appelman <icewind@owncloud.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -119,7 +120,6 @@ class OC_Template extends \OC\Template\Base {
 
 			// avatars
 			if (\OC::$server->getSystemConfig()->getValue('enable_avatars', true) === true) {
-				\OC_Util::addScript('avatar', null, true);
 				\OC_Util::addScript('jquery.avatar', null, true);
 				\OC_Util::addScript('placeholder', null, true);
 			}
@@ -162,6 +162,8 @@ class OC_Template extends \OC\Template\Base {
 			}
 
 			if (\OC::$server->getRequest()->isUserAgent([\OC\AppFramework\Http\Request::USER_AGENT_IE])) {
+				// polyfill for btoa/atob for IE friends
+				OC_Util::addVendorScript('base64/base64');
 				// shim for the davclient.js library
 				\OCP\Util::addScript('files/iedavclient');
 			}
@@ -221,17 +223,17 @@ class OC_Template extends \OC\Template\Base {
 		$data = parent::fetchPage();
 
 		if( $this->renderAs ) {
-			$page = new OC_TemplateLayout($this->renderAs, $this->app);
+			$page = new \OC\TemplateLayout($this->renderAs, $this->app);
 
 			// Add custom headers
 			$headers = '';
 			foreach(OC_Util::$headers as $header) {
-				$headers .= '<'.OC_Util::sanitizeHTML($header['tag']);
+				$headers .= '<'.\OCP\Util::sanitizeHTML($header['tag']);
 				foreach($header['attributes'] as $name=>$value) {
-					$headers .= ' '.OC_Util::sanitizeHTML($name).'="'.OC_Util::sanitizeHTML($value).'"';
+					$headers .= ' '.\OCP\Util::sanitizeHTML($name).'="'.\OCP\Util::sanitizeHTML($value).'"';
 				}
 				if ($header['text'] !== null) {
-					$headers .= '>'.OC_Util::sanitizeHTML($header['text']).'</'.OC_Util::sanitizeHTML($header['tag']).'>';
+					$headers .= '>'.\OCP\Util::sanitizeHTML($header['text']).'</'.\OCP\Util::sanitizeHTML($header['tag']).'>';
 				} else {
 					$headers .= '/>';
 				}

@@ -7,10 +7,11 @@
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <icewind@owncloud.com>
+ * @author Roeland Jago Douma <rullzer@owncloud.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -61,8 +62,10 @@ class Test_Files_Versioning extends \Test\TestCase {
 
 	public static function tearDownAfterClass() {
 		// cleanup test user
-		\OC_User::deleteUser(self::TEST_VERSIONS_USER);
-		\OC_User::deleteUser(self::TEST_VERSIONS_USER2);
+		$user = \OC::$server->getUserManager()->get(self::TEST_VERSIONS_USER);
+		if ($user !== null) { $user->delete(); }
+		$user = \OC::$server->getUserManager()->get(self::TEST_VERSIONS_USER2);
+		if ($user !== null) { $user->delete(); }
 
 		parent::tearDownAfterClass();
 	}
@@ -83,10 +86,12 @@ class Test_Files_Versioning extends \Test\TestCase {
 	}
 
 	protected function tearDown() {
-		$this->rootView->deleteAll(self::TEST_VERSIONS_USER . '/files/');
-		$this->rootView->deleteAll(self::TEST_VERSIONS_USER2 . '/files/');
-		$this->rootView->deleteAll(self::TEST_VERSIONS_USER . '/files_versions/');
-		$this->rootView->deleteAll(self::TEST_VERSIONS_USER2 . '/files_versions/');
+		if ($this->rootView) {
+			$this->rootView->deleteAll(self::TEST_VERSIONS_USER . '/files/');
+			$this->rootView->deleteAll(self::TEST_VERSIONS_USER2 . '/files/');
+			$this->rootView->deleteAll(self::TEST_VERSIONS_USER . '/files_versions/');
+			$this->rootView->deleteAll(self::TEST_VERSIONS_USER2 . '/files_versions/');
+		}
 
 		\OC_Hook::clear();
 

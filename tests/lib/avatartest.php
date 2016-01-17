@@ -60,12 +60,25 @@ class AvatarTest extends \Test\TestCase {
 
 		$file = $this->getMock('\OCP\Files\File');
 		$file->method('getContent')->willReturn($expected->data());
-		$this->folder->method('get')->with('avatar.png')->willReturn($file);
+
+		$this->folder->method('get')
+			->will($this->returnCallback(
+				function($path) use ($file) {
+					if ($path === 'avatar.png') {
+						return $file;
+					} else {
+						throw new \OCP\Files\NotFoundException;
+					}
+				}
+			));
 
 		$newFile = $this->getMock('\OCP\Files\File');
 		$newFile->expects($this->once())
 			->method('putContent')
 			->with($expected2->data());
+		$newFile->expects($this->once())
+			->method('getContent')
+			->willReturn($expected2->data());
 		$this->folder->expects($this->once())
 			->method('newFile')
 			->with('avatar.32.png')
@@ -97,13 +110,29 @@ class AvatarTest extends \Test\TestCase {
 	}
 
 	public function testSetAvatar() {
-		$oldFile = $this->getMock('\OCP\Files\File');
-		$this->folder->method('get')
-			->will($this->returnValueMap([
-				['avatar.jpg', $oldFile],
-				['avatar.png', $oldFile],
-			]));
-		$oldFile->expects($this->exactly(2))->method('delete');
+		$avatarFileJPG = $this->getMock('\OCP\Files\File');
+		$avatarFileJPG->method('getName')
+			->willReturn('avatar.jpg');
+		$avatarFileJPG->expects($this->once())->method('delete');
+
+		$avatarFilePNG = $this->getMock('\OCP\Files\File');
+		$avatarFilePNG->method('getName')
+			->willReturn('avatar.png');
+		$avatarFilePNG->expects($this->once())->method('delete');
+
+		$resizedAvatarFile = $this->getMock('\OCP\Files\File');
+		$resizedAvatarFile->method('getName')
+			->willReturn('avatar.32.jpg');
+		$resizedAvatarFile->expects($this->once())->method('delete');
+
+		$nonAvatarFile = $this->getMock('\OCP\Files\File');
+		$nonAvatarFile->method('getName')
+			->willReturn('avatarX');
+		$nonAvatarFile->expects($this->never())->method('delete');
+
+		$this->folder->method('search')
+			->with('avatar')
+			->willReturn([$avatarFileJPG, $avatarFilePNG, $resizedAvatarFile, $nonAvatarFile]);
 
 		$newFile = $this->getMock('\OCP\Files\File');
 		$this->folder->expects($this->once())

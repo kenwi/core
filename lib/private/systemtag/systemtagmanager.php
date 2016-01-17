@@ -1,8 +1,9 @@
 <?php
 /**
+ * @author Joas Schilling <nickvergessen@owncloud.com>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -63,7 +64,7 @@ class SystemTagManager implements ISystemTagManager {
 	/**
 	 * {@inheritdoc}
 	 */
-	public function getTagsById($tagIds) {
+	public function getTagsByIds($tagIds) {
 		if (!is_array($tagIds)) {
 			$tagIds = [$tagIds];
 		}
@@ -242,7 +243,7 @@ class SystemTagManager implements ISystemTagManager {
 
 		$tagNotFoundException = null;
 		try {
-			$this->getTagsById($tagIds);
+			$this->getTagsByIds($tagIds);
 		} catch (TagNotFoundException $e) {
 			$tagNotFoundException = $e;
 		}

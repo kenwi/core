@@ -8,7 +8,7 @@
  */
 class Test_Util extends \Test\TestCase {
 	public function testGetVersion() {
-		$version = \OC_Util::getVersion();
+		$version = \OCP\Util::getVersion();
 		$this->assertTrue(is_array($version));
 		foreach ($version as $num) {
 			$this->assertTrue(is_int($num));
@@ -95,16 +95,22 @@ class Test_Util extends \Test\TestCase {
 	}
 
 	function testSanitizeHTML() {
-		$badArray = array(
+		$badArray = [
 			'While it is unusual to pass an array',
 			'this function actually <blink>supports</blink> it.',
-			'And therefore there needs to be a <script>alert("Unit"+\'test\')</script> for it!'
-		);
-		$goodArray = array(
+			'And therefore there needs to be a <script>alert("Unit"+\'test\')</script> for it!',
+			[
+				'And It Even May <strong>Nest</strong>',
+			],
+		];
+		$goodArray = [
 			'While it is unusual to pass an array',
 			'this function actually &lt;blink&gt;supports&lt;/blink&gt; it.',
-			'And therefore there needs to be a &lt;script&gt;alert(&quot;Unit&quot;+&#039;test&#039;)&lt;/script&gt; for it!'
-		);
+			'And therefore there needs to be a &lt;script&gt;alert(&quot;Unit&quot;+&#039;test&#039;)&lt;/script&gt; for it!',
+			[
+				'And It Even May &lt;strong&gt;Nest&lt;/strong&gt;'
+			],
+		];
 		$result = OC_Util::sanitizeHTML($badArray);
 		$this->assertEquals($goodArray, $result);
 
@@ -130,11 +136,6 @@ class Test_Util extends \Test\TestCase {
 	public function testFileInfoLoaded() {
 		$expected = function_exists('finfo_open');
 		$this->assertEquals($expected, \OC_Util::fileInfoLoaded());
-	}
-
-	function testGenerateRandomBytes() {
-		$result = strlen(OC_Util::generateRandomBytes(59));
-		$this->assertEquals(59, $result);
 	}
 
 	function testGetDefaultEmailAddress() {

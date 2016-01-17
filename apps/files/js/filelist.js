@@ -642,7 +642,13 @@
 			};
 
 			OCA.Files.FileActions.updateFileActionSpinner(downloadFileaction, true);
-			OCA.Files.Files.handleDownload(this.getDownloadUrl(files, dir, true), disableLoadingState);
+			if(this.getSelectedFiles().length > 1) {
+				OCA.Files.Files.handleDownload(this.getDownloadUrl(files, dir, true), disableLoadingState);
+			}
+			else {
+				first = this.getSelectedFiles()[0];
+				OCA.Files.Files.handleDownload(this.getDownloadUrl(first.name, dir, true), disableLoadingState);
+			}
 			return false;
 		},
 
@@ -990,13 +996,16 @@
 			}
 
 			if (fileData.mountType) {
-				// FIXME: HACK: detect shared-root
-				if (fileData.mountType === 'shared' && this.dirInfo.mountType !== 'shared') {
-					// if parent folder isn't share, assume the displayed folder is a share root
-					fileData.mountType = 'shared-root';
-				} else if (fileData.mountType === 'external' && this.dirInfo.mountType !== 'external') {
-					// if parent folder isn't external, assume the displayed folder is the external storage root
-					fileData.mountType = 'external-root';
+				// dirInfo (parent) only exist for the "real" file list
+				if (this.dirInfo.id) {
+					// FIXME: HACK: detect shared-root
+					if (fileData.mountType === 'shared' && this.dirInfo.mountType !== 'shared' && this.dirInfo.mountType !== 'shared-root') {
+						// if parent folder isn't share, assume the displayed folder is a share root
+						fileData.mountType = 'shared-root';
+					} else if (fileData.mountType === 'external' && this.dirInfo.mountType !== 'external' && this.dirInfo.mountType !== 'external-root') {
+						// if parent folder isn't external, assume the displayed folder is the external storage root
+						fileData.mountType = 'external-root';
+					}
 				}
 				tr.attr('data-mounttype', fileData.mountType);
 			}
@@ -1065,7 +1074,7 @@
 				nameSpan.tooltip({placement: 'right'});
 			}
 			// dirs can show the number of uploaded files
-			if (mime !== 'httpd/unix-directory') {
+			if (mime === 'httpd/unix-directory') {
 				linkElem.append($('<span></span>').attr({
 					'class': 'uploadtext',
 					'currentUploads': 0
@@ -1380,7 +1389,7 @@
 		 * Returns list of webdav properties to request
 		 */
 		_getWebdavProperties: function() {
-			return this.filesClient.getPropfindProperties();
+			return [].concat(this.filesClient.getPropfindProperties());
 		},
 
 		/**
@@ -1755,7 +1764,9 @@
 		updateRow: function($tr, fileInfo, options) {
 			this.files.splice($tr.index(), 1);
 			$tr.remove();
-			$tr = this.add(fileInfo, _.extend({updateSummary: false, silent: true}, options));
+			options = _.extend({silent: true}, options);
+			options = _.extend(options, {updateSummary: false});
+			$tr = this.add(fileInfo, options);
 			this.$fileList.trigger($.Event('fileActionsReady', {fileList: this, $files: $tr}));
 			return $tr;
 		},
@@ -2069,7 +2080,7 @@
 		 */
 		showFileBusyState: function(files, state) {
 			var self = this;
-			if (!_.isArray(files)) {
+			if (!_.isArray(files) && !files.is) {
 				files = [files];
 			}
 
@@ -2077,10 +2088,13 @@
 				state = true;
 			}
 
-			_.each(files, function($tr) {
+			_.each(files, function(fileName) {
 				// jquery element already ?
-				if (!$tr.is) {
-					$tr = self.findFileEl($tr);
+				var $tr;
+				if (_.isString(fileName)) {
+					$tr = self.findFileEl(fileName);
+				} else {
+					$tr = $(fileName);
 				}
 
 				var $thumbEl = $tr.find('.thumbnail');
@@ -2465,6 +2479,7 @@
 				}
 			});
 			fileUploadStart.on('fileuploadadd', function(e, data) {
+				console.log('XXXXXXX');
 				OC.Upload.log('filelist handle fileuploadadd', e, data);
 
 				//finish delete if we are uploading a deleted file
@@ -2484,8 +2499,7 @@
 
 					var translatedText = n('files', 'Uploading %n file', 'Uploading %n files', currentUploads);
 					if (currentUploads === 1) {
-						var img = OC.imagePath('core', 'loading.gif');
-						data.context.find('.thumbnail').css('background-image', 'url(' + img + ')');
+						self.showFileBusyState(uploadText.closest('tr'), true);
 						uploadText.text(translatedText);
 						uploadText.show();
 					} else {
@@ -2523,8 +2537,7 @@
 						uploadText.attr('currentUploads', currentUploads);
 						var translatedText = n('files', 'Uploading %n file', 'Uploading %n files', currentUploads);
 						if (currentUploads === 0) {
-							var img = OC.imagePath('core', 'filetypes/folder');
-							data.context.find('.thumbnail').css('background-image', 'url(' + img + ')');
+							self.showFileBusyState(uploadText.closest('tr'), false);
 							uploadText.text(translatedText);
 							uploadText.hide();
 						} else {
@@ -2601,18 +2614,15 @@
 					}
 				}
 			});
-			fileUploadStart.on('fileuploadstop', function(e, data) {
-				OC.Upload.log('filelist handle fileuploadstop', e, data);
+			fileUploadStart.on('fileuploadstop', function() {
+				OC.Upload.log('filelist handle fileuploadstop');
 
-				//if user pressed cancel hide upload chrome
-				if (data.errorThrown === 'abort') {
-					//cleanup uploading to a dir
-					var uploadText = $('tr .uploadtext');
-					var img = OC.imagePath('core', 'filetypes/folder');
-					uploadText.parents('td.filename').find('.thumbnail').css('background-image', 'url(' + img + ')');
-					uploadText.fadeOut();
-					uploadText.attr('currentUploads', 0);
-				}
+				//cleanup uploading to a dir
+				var uploadText = self.$fileList.find('tr .uploadtext');
+				self.showFileBusyState(uploadText.closest('tr'), false);
+				uploadText.fadeOut();
+				uploadText.attr('currentUploads', 0);
+
 				self.updateStorageStatistics();
 			});
 			fileUploadStart.on('fileuploadfail', function(e, data) {
@@ -2621,9 +2631,8 @@
 				//if user pressed cancel hide upload chrome
 				if (data.errorThrown === 'abort') {
 					//cleanup uploading to a dir
-					var uploadText = $('tr .uploadtext');
-					var img = OC.imagePath('core', 'filetypes/folder');
-					uploadText.parents('td.filename').find('.thumbnail').css('background-image', 'url(' + img + ')');
+					var uploadText = self.$fileList.find('tr .uploadtext');
+					self.showFileBusyState(uploadText.closest('tr'), false);
 					uploadText.fadeOut();
 					uploadText.attr('currentUploads', 0);
 				}

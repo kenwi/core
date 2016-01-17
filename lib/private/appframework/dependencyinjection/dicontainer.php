@@ -1,15 +1,16 @@
 <?php
 /**
  * @author Bernhard Posselt <dev@bernhard-posselt.com>
+ * @author Joas Schilling <nickvergessen@owncloud.com>
  * @author Jörn Friedrich Dreyer <jfd@butonic.de>
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Roeland Jago Douma <rullzer@owncloud.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Thomas Tanghus <thomas@tanghus.net>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -61,6 +62,10 @@ class DIContainer extends SimpleContainer implements IAppContainer {
 		parent::__construct();
 		$this['AppName'] = $appName;
 		$this['urlParams'] = $urlParams;
+
+		/** @var \OC\ServerContainer $server */
+		$server = $this->getServer();
+		$server->registerAppContainer($appName, $this);
 
 		// aliases
 		$this->registerAlias('appName', 'AppName');
@@ -160,6 +165,10 @@ class DIContainer extends SimpleContainer implements IAppContainer {
 
 		$this->registerAlias('OCP\\AppFramework\\Utility\\IControllerMethodReflector', 'OC\AppFramework\Utility\ControllerMethodReflector');
 		$this->registerAlias('ControllerMethodReflector', 'OCP\\AppFramework\\Utility\\IControllerMethodReflector');
+
+		$this->registerService('OCP\\Files\\IMimeTypeDetector', function($c) {
+			return $this->getServer()->getMimeTypeDetector();
+		});
 
 		$this->registerService('OCP\\INavigationManager', function($c) {
 			return $this->getServer()->getNavigationManager();

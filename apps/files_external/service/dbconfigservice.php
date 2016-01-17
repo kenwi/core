@@ -2,7 +2,7 @@
 /**
  * @author Robin Appelman <icewind@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -209,6 +209,34 @@ class DBConfigService {
 
 		$query = $builder->delete('external_options')
 			->where($builder->expr()->eq('mount_id', $builder->createNamedParameter($mountId, \PDO::PARAM_INT)));
+		$query->execute();
+	}
+
+	/**
+	 * @param int $mountId
+	 * @param string $newMountPoint
+	 */
+	public function setMountPoint($mountId, $newMountPoint) {
+		$builder = $this->connection->getQueryBuilder();
+
+		$query = $builder->update('external_mounts')
+			->set('mount_point', $builder->createNamedParameter($newMountPoint))
+			->where($builder->expr()->eq('mount_id', $builder->createNamedParameter($mountId, \PDO::PARAM_INT)));
+
+		$query->execute();
+	}
+
+	/**
+	 * @param int $mountId
+	 * @param string $newAuthBackend
+	 */
+	public function setAuthBackend($mountId, $newAuthBackend) {
+		$builder = $this->connection->getQueryBuilder();
+
+		$query = $builder->update('external_mounts')
+			->set('auth_backend', $builder->createNamedParameter($newAuthBackend))
+			->where($builder->expr()->eq('mount_id', $builder->createNamedParameter($mountId, \PDO::PARAM_INT)));
+
 		$query->execute();
 	}
 

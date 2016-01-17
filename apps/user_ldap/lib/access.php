@@ -11,12 +11,15 @@
  * @author Lorenzo M. Catucci <lorenzo@sancho.ccd.uniroma2.it>
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Lyonel Vincent <lyonel@ezix.org>
+ * @author Mario Kolling <mario.kolling@serpro.gov.br>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Nicolas Grekas <nicolas.grekas@gmail.com>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Ralph Krimmel <rkrimme1@gwdg.de>
+ * @author Renaud Fortier <Renaud.Fortier@fsaa.ulaval.ca>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Scrutinizer Auto-Fixer <auto-fixer@scrutinizer-ci.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -177,7 +180,7 @@ class Access extends LDAPUtility implements user\IUserTools {
 			//in case an error occurs , e.g. object does not exist
 			return false;
 		}
-		if (empty($attr)) {
+		if (empty($attr) && ($filter === 'objectclass=*' || $this->ldap->countEntries($cr, $rr) === 1)) {
 			\OCP\Util::writeLog('user_ldap', 'readAttribute: '.$dn.' found', \OCP\Util::DEBUG);
 			return array();
 		}
@@ -1193,7 +1196,7 @@ class Access extends LDAPUtility implements user\IUserTools {
 		$searchWords = explode(' ', trim($search));
 		$wordFilters = array();
 		foreach($searchWords as $word) {
-			$word .= '*';
+			$word = $this->prepareSearchTerm($word);
 			//every word needs to appear at least once
 			$wordMatchOneAttrFilters = array();
 			foreach($searchAttributes as $attr) {
@@ -1226,7 +1229,8 @@ class Access extends LDAPUtility implements user\IUserTools {
 				);
 			}
 		}
-		$search = empty($search) ? '*' : $search.'*';
+
+		$search = $this->prepareSearchTerm($search);
 		if(!is_array($searchAttributes) || count($searchAttributes) === 0) {
 			if(empty($fallbackAttribute)) {
 				return '';
@@ -1241,6 +1245,22 @@ class Access extends LDAPUtility implements user\IUserTools {
 			return '('.$filter[0].')';
 		}
 		return $this->combineFilterWithOr($filter);
+	}
+
+	/**
+	 * returns the search term depending on whether we are allowed
+	 * list users found by ldap with the current input appended by
+	 * a *
+	 * @return string
+	 */
+	private function prepareSearchTerm($term) {
+		$config = \OC::$server->getConfig();
+
+		$allowEnum = $config->getAppValue('core', 'shareapi_allow_share_dialog_user_enumeration', 'yes');
+
+		$result = empty($term) ? '*' :
+			$allowEnum !== 'no' ? $term . '*' : $term;
+		return $result;
 	}
 
 	/**
@@ -1274,6 +1294,54 @@ class Access extends LDAPUtility implements user\IUserTools {
 		$result=$testConnection->bind();
 		$this->connection->bind();
 		return $result;
+	}
+
+	/**
+	 * reverse lookup of a DN given a known UUID
+	 *
+	 * @param string $uuid
+	 * @return string
+	 * @throws \Exception
+	 */
+	public function getUserDnByUuid($uuid) {
+		$uuidOverride = $this->connection->ldapExpertUUIDUserAttr;
+		$filter       = $this->connection->ldapUserFilter;
+		$base         = $this->connection->ldapBaseUsers;
+
+		if($this->connection->ldapUuidUserAttribute === 'auto' && empty($uuidOverride)) {
+			// Sacrebleu! The UUID attribute is unknown :( We need first an
+			// existing DN to be able to reliably detect it.
+			$result = $this->search($filter, $base, ['dn'], 1);
+			if(!isset($result[0]) || !isset($result[0]['dn'])) {
+				throw new \Exception('Cannot determine UUID attribute');
+			}
+			$dn = $result[0]['dn'][0];
+			if(!$this->detectUuidAttribute($dn, true)) {
+				throw new \Exception('Cannot determine UUID attribute');
+			}
+		} else {
+			// The UUID attribute is either known or an override is given.
+			// By calling this method we ensure that $this->connection->$uuidAttr
+			// is definitely set
+			if(!$this->detectUuidAttribute('', true)) {
+				throw new \Exception('Cannot determine UUID attribute');
+			}
+		}
+
+		$uuidAttr = $this->connection->ldapUuidUserAttribute;
+		if($uuidAttr === 'guid' || $uuidAttr === 'objectguid') {
+			$uuid = $this->formatGuid2ForFilterUser($uuid);
+		}
+
+		$filter = $uuidAttr . '=' . $uuid;
+		$result = $this->searchUsers($filter, ['dn'], 2);
+		if(is_array($result) && isset($result[0]) && isset($result[0]['dn']) && count($result) === 1) {
+			// we put the count into account to make sure that this is
+			// really unique
+			return $result[0]['dn'][0];
+		}
+
+		throw new \Exception('Cannot determine UUID attribute');
 	}
 
 	/**
@@ -1376,6 +1444,53 @@ class Access extends LDAPUtility implements user\IUserTools {
 		$hex_guid_to_guid_str .= '-' . substr($hex_guid, 20);
 
 		return strtoupper($hex_guid_to_guid_str);
+	}
+
+	/**
+	 * the first three blocks of the string-converted GUID happen to be in
+	 * reverse order. In order to use it in a filter, this needs to be
+	 * corrected. Furthermore the dashes need to be replaced and \\ preprended
+	 * to every two hax figures.
+	 *
+	 * If an invalid string is passed, it will be returned without change.
+	 *
+	 * @param string $guid
+	 * @return string
+	 */
+	public function formatGuid2ForFilterUser($guid) {
+		if(!is_string($guid)) {
+			throw new \InvalidArgumentException('String expected');
+		}
+		$blocks = explode('-', $guid);
+		if(count($blocks) !== 5) {
+			/*
+			 * Why not throw an Exception instead? This method is a utility
+			 * called only when trying to figure out whether a "missing" known
+			 * LDAP user was or was not renamed on the LDAP server. And this
+			 * even on the use case that a reverse lookup is needed (UUID known,
+			 * not DN), i.e. when finding users (search dialog, users page,
+			 * login, …) this will not be fired. This occurs only if shares from
+			 * a users are supposed to be mounted who cannot be found. Throwing
+			 * an exception here would kill the experience for a valid, acting
+			 * user. Instead we write a log message.
+			 */
+			\OC::$server->getLogger()->info(
+				'Passed string does not resemble a valid GUID. Known UUID ' .
+				'({uuid}) probably does not match UUID configuration.',
+				[ 'app' => 'user_ldap', 'uuid' => $guid ]
+			);
+			return $guid;
+		}
+		for($i=0; $i < 3; $i++) {
+			$pairs = str_split($blocks[$i], 2);
+			$pairs = array_reverse($pairs);
+			$blocks[$i] = implode('', $pairs);
+		}
+		for($i=0; $i < 5; $i++) {
+			$pairs = str_split($blocks[$i], 2);
+			$blocks[$i] = '\\' . implode('\\', $pairs);
+		}
+		return implode('', $blocks);
 	}
 
 	/**

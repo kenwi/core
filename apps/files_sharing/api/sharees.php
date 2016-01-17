@@ -3,7 +3,7 @@
  * @author Joas Schilling <nickvergessen@owncloud.com>
  * @author Roeland Jago Douma <rullzer@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -353,7 +353,7 @@ class Sharees {
 		$this->limit = (int) $perPage;
 		$this->offset = $perPage * ($page - 1);
 
-		return $this->searchSharees(strtolower($search), $itemType, $shareTypes, $page, $perPage);
+		return $this->searchSharees($search, $itemType, $shareTypes, $page, $perPage);
 	}
 
 	/**

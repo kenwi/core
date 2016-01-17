@@ -1,8 +1,10 @@
 <?php
 /**
  * @author Björn Schießle <schiessle@owncloud.com>
+ * @author Robin Appelman <icewind@owncloud.com>
+ * @author Thomas Müller <thomas.mueller@tmit.eu>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -91,7 +93,7 @@ class GetSharedSecret extends QueuedJob{
 			$this->trustedServers = new TrustedServers(
 					$this->dbHandler,
 					\OC::$server->getHTTPClientService(),
-					\OC::$server->getLogger(),
+					$this->logger,
 					$this->jobList,
 					\OC::$server->getSecureRandom(),
 					\OC::$server->getConfig()
@@ -148,6 +150,7 @@ class GetSharedSecret extends QueuedJob{
 
 		} catch (ClientException $e) {
 			$status = $e->getCode();
+			$this->logger->logException($e);
 		}
 
 		// if we received a unexpected response we try again later

@@ -1,11 +1,24 @@
 <?php
 /**
- * @author Lukas Reschke
- * @copyright 2014 Lukas Reschke lukas@owncloud.com
+ * @author Lukas Reschke <lukas@owncloud.com>
+ * @author Thomas Müller <thomas.mueller@tmit.eu>
+ * @author Vincent Petry <pvince81@owncloud.com>
  *
- * This file is licensed under the Affero General Public License version 3 or
- * later.
- * See the COPYING-README file.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
+ * @license AGPL-3.0
+ *
+ * This code is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License, version 3,
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
  */
 
 namespace OCA\DAV\Tests\Unit\Connector\Sabre;
@@ -17,18 +30,14 @@ use OCP\IConfig;
 class Principal extends \Test\TestCase {
 	/** @var IUserManager */
 	private $userManager;
-	/** @var IConfig */
-	private $config;
 	/** @var \OCA\DAV\Connector\Sabre\Principal */
 	private $connector;
 
 	public function setUp() {
 		$this->userManager = $this->getMockBuilder('\OCP\IUserManager')
 			->disableOriginalConstructor()->getMock();
-		$this->config = $this->getMockBuilder('\OCP\IConfig')
-			->disableOriginalConstructor()->getMock();
 
-		$this->connector = new \OCA\DAV\Connector\Sabre\Principal($this->config, $this->userManager);
+		$this->connector = new \OCA\DAV\Connector\Sabre\Principal($this->userManager);
 		parent::setUp();
 	}
 

@@ -8,12 +8,12 @@
  * @author macjohnny <estebanmarin@gmx.ch>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <icewind@owncloud.com>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Roeland Jago Douma <rullzer@owncloud.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author voxsim <Simon Vocella>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -33,6 +33,7 @@
 namespace OC\Group;
 
 use OC\Hooks\PublicEmitter;
+use OCP\GroupInterface;
 use OCP\IGroupManager;
 
 /**
@@ -52,7 +53,7 @@ use OCP\IGroupManager;
  */
 class Manager extends PublicEmitter implements IGroupManager {
 	/**
-	 * @var \OC_Group_Backend[]|\OC_Group_Database[] $backends
+	 * @var GroupInterface[] $backends
 	 */
 	private $backends = array();
 
@@ -121,7 +122,7 @@ class Manager extends PublicEmitter implements IGroupManager {
 	}
 
 	/**
-	 * @param \OC_Group_Backend $backend
+	 * @param \OCP\GroupInterface $backend
 	 */
 	public function addBackend($backend) {
 		$this->backends[] = $backend;

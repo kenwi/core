@@ -1,9 +1,10 @@
 <?php
 /**
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin Appelman <icewind@owncloud.com>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -104,9 +105,22 @@ class UserStoragesService extends StoragesService {
 	 * @return StorageConfig storage config, with added id
 	 */
 	public function addStorage(StorageConfig $newStorage) {
+		$newStorage->setApplicableUsers([$this->getUser()->getUID()]);
 		$config = parent::addStorage($newStorage);
-		$this->dbConfig->addApplicable($config->getId(), DBConfigService::APPLICABLE_TYPE_USER, $this->getUser()->getUID());
 		return $config;
+	}
+
+	/**
+	 * Update storage to the configuration
+	 *
+	 * @param StorageConfig $updatedStorage storage attributes
+	 *
+	 * @return StorageConfig storage config
+	 * @throws NotFoundException if the given storage does not exist in the config
+	 */
+	public function updateStorage(StorageConfig $updatedStorage) {
+		$updatedStorage->setApplicableUsers([$this->getUser()->getUID()]);
+		return parent::updateStorage($updatedStorage);
 	}
 
 	/**
@@ -116,5 +130,9 @@ class UserStoragesService extends StoragesService {
 	 */
 	public function getVisibilityType() {
 		return BackendService::VISIBILITY_PERSONAL;
+	}
+
+	protected function isApplicable(StorageConfig $config) {
+		return ($config->getApplicableUsers() === [$this->getUser()->getUID()]) && $config->getType() === StorageConfig::MOUNT_TYPE_PERSONAl;
 	}
 }

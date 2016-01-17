@@ -4,7 +4,6 @@
  * @author Andreas Fischer <bantu@owncloud.com>
  * @author Bart Visscher <bartv@thisnet.nl>
  * @author Bernhard Posselt <dev@bernhard-posselt.com>
- * @author Felix Moeller <mail@felixmoeller.de>
  * @author Jakob Sack <mail@jakobsack.de>
  * @author Jan-Christoph Borchardt <hey@jancborchardt.net>
  * @author Joas Schilling <nickvergessen@owncloud.com>
@@ -13,13 +12,13 @@
  * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <icewind@owncloud.com>
- * @author Robin McCorkell <rmccorkell@karoshi.org.uk>
+ * @author Robin McCorkell <robin@mccorkell.me.uk>
  * @author Scrutinizer Auto-Fixer <auto-fixer@scrutinizer-ci.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Thomas Tanghus <thomas@tanghus.net>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -77,17 +76,6 @@ class OC_L10N implements \OCP\IL10N {
 	private $pluralFormFunction = null;
 
 	/**
-	 * get an L10N instance
-	 * @param string $app
-	 * @param string|null $lang
-	 * @return \OCP\IL10N
-	 * @deprecated Use \OC::$server->getL10NFactory()->get() instead
-	 */
-	public static function get($app, $lang=null) {
-		return \OC::$server->getL10NFactory()->get($app, $lang);
-	}
-
-	/**
 	 * The constructor
 	 * @param string $app app requesting l10n
 	 * @param string $lang default: null Language
@@ -116,13 +104,17 @@ class OC_L10N implements \OCP\IL10N {
 				$preferred_language = str_replace('-', '_', $preferred_language);
 				foreach ($available as $available_language) {
 					if ($preferred_language === strtolower($available_language)) {
-						self::$language = $available_language;
+						if (!self::$language) {
+							self::$language = $available_language;
+						}
 						return $available_language;
 					}
 				}
 				foreach ($available as $available_language) {
 					if (substr($preferred_language, 0, 2) === $available_language) {
-						self::$language = $available_language;
+						if (!self::$language) {
+							self::$language = $available_language;
+						}
 						return $available_language;
 					}
 				}
@@ -407,7 +399,7 @@ class OC_L10N implements \OCP\IL10N {
 	 * If nothing works it returns 'en'
 	 */
 	public static function findLanguage($app = null) {
-		if(self::$language != '') {
+		if (self::$language != '' && self::languageExists($app, self::$language)) {
 			return self::$language;
 		}
 

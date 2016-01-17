@@ -2,13 +2,14 @@
 /**
  * @author Björn Schießle <schiessle@owncloud.com>
  * @author Joas Schilling <nickvergessen@owncloud.com>
+ * @author Lukas Reschke <lukas@owncloud.com>
  * @author Morris Jobke <hey@morrisjobke.de>
  * @author Robin Appelman <icewind@owncloud.com>
  * @author Roeland Jago Douma <rullzer@owncloud.com>
  * @author Thomas Müller <thomas.mueller@tmit.eu>
  * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -64,9 +65,10 @@ class Local {
 		if ($shares === false) {
 			return new \OC_OCS_Result(null, 404, 'could not get shares');
 		} else {
+			$mimetypeDetector = \OC::$server->getMimeTypeDetector();
 			foreach ($shares as &$share) {
 				if ($share['item_type'] === 'file' && isset($share['path'])) {
-					$share['mimetype'] = \OC_Helper::getFileNameMimeType($share['path']);
+					$share['mimetype'] = $mimetypeDetector->detectPath($share['path']);
 					if (\OC::$server->getPreviewManager()->isMimeSupported($share['mimetype'])) {
 						$share['isPreviewAvailable'] = true;
 					}
@@ -227,9 +229,10 @@ class Local {
 	private static function getFilesSharedWithMe() {
 		try	{
 			$shares = \OCP\Share::getItemsSharedWith('file');
+			$mimetypeDetector = \OC::$server->getMimeTypeDetector();
 			foreach ($shares as &$share) {
 				if ($share['item_type'] === 'file') {
-					$share['mimetype'] = \OC_Helper::getFileNameMimeType($share['file_target']);
+					$share['mimetype'] = $mimetypeDetector->detectPath($share['file_target']);
 					if (\OC::$server->getPreviewManager()->isMimeSupported($share['mimetype'])) {
 						$share['isPreviewAvailable'] = true;
 					}

@@ -1,8 +1,11 @@
 <?php
 /**
  * @author Lukas Reschke <lukas@owncloud.com>
+ * @author Roeland Jago Douma <rullzer@owncloud.com>
+ * @author Thomas Müller <thomas.mueller@tmit.eu>
+ * @author Vincent Petry <pvince81@owncloud.com>
  *
- * @copyright Copyright (c) 2015, ownCloud, Inc.
+ * @copyright Copyright (c) 2016, ownCloud, Inc.
  * @license AGPL-3.0
  *
  * This code is free software: you can redistribute it and/or modify
@@ -21,6 +24,7 @@
 
 namespace OCA\DAV\Tests\Unit\Connector\Sabre;
 
+use OCP\IUser;
 use Test\TestCase;
 use OCP\ISession;
 use OCP\IUserSession;
@@ -29,6 +33,7 @@ use OCP\IUserSession;
  * Class Auth
  *
  * @package OCA\DAV\Connector\Sabre
+ * @group DB
  */
 class Auth extends TestCase {
 	/** @var ISession */
@@ -330,21 +335,31 @@ class Auth extends TestCase {
 		$httpResponse = $this->getMockBuilder('\Sabre\HTTP\ResponseInterface')
 			->disableOriginalConstructor()
 			->getMock();
+		/** @var IUser */
+		$user = $this->getMock('OCP\IUser');
+		$user->method('getUID')->willReturn('MyTestUser');
 		$this->userSession
 			->expects($this->any())
 			->method('isLoggedIn')
 			->will($this->returnValue(true));
+		$this->userSession
+			->expects($this->any())
+			->method('getUser')
+			->willReturn($user);
 		$this->session
-			->expects($this->once())
+			->expects($this->atLeastOnce())
 			->method('get')
 			->with('AUTHENTICATED_TO_DAV_BACKEND')
 			->will($this->returnValue('MyTestUser'));
 		$httpRequest
-			->expects($this->once())
+			->expects($this->atLeastOnce())
 			->method('getHeader')
 			->with('Authorization')
 			->will($this->returnValue(null));
-		$this->auth->check($httpRequest, $httpResponse);
+		$this->assertEquals(
+			[true, 'principals/users/MyTestUser'],
+			$this->auth->check($httpRequest, $httpResponse)
+		);
 	}
 
 	public function testAuthenticateValidCredentials() {
